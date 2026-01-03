@@ -8,4 +8,6 @@ type ApiGroup struct {
 	AnnualShakeRoundApi
 	AnnualPrizeApi
 	AnnualWinnerApi
+	AnnualDashboardApi
+	AnnualConfigApi
 }

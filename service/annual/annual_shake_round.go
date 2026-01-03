@@ -149,9 +149,35 @@ func (s *AnnualShakeRoundService) StopShakeRound(id string) (winners []annual.An
 	return
 }
 
-// DeleteShakeRound 删除场次
+// DeleteShakeRound 删除摇一摇场次（安全检查）
 func (s *AnnualShakeRoundService) DeleteShakeRound(id uint) (err error) {
+	if err = s.checkShakeRoundRelations(id); err != nil {
+		return err
+	}
 	return global.GVA_DB.Delete(&annual.AnnualShakeRound{}, id).Error
+}
+
+// checkShakeRoundRelations 检查场次关联数据
+func (s *AnnualShakeRoundService) checkShakeRoundRelations(roundId uint) error {
+	var count int64
+
+	// 检查摇一摇成绩
+	if err := global.GVA_DB.Model(&annual.AnnualShakeScore{}).Where("round_id = ?", roundId).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("该场次存在成绩记录，无法删除")
+	}
+
+	// 检查中奖记录
+	if err := global.GVA_DB.Model(&annual.AnnualWinner{}).Where("round_id = ?", roundId).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("该场次存在中奖记录，无法删除")
+	}
+
+	return nil
 }
 
 // GetShakeScores 获取成绩排行

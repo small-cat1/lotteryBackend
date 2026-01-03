@@ -1,13 +1,10 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"lotteryBackend/global"
-	"lotteryBackend/model/system"
-	"lotteryBackend/service"
 	astutil "lotteryBackend/utils/ast"
 	"lotteryBackend/utils/stacktrace"
 	"os"
@@ -81,8 +78,6 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 			return err
 		}
 
-		form := "后端"
-		level := entry.Level.String()
 		// 生成基础信息
 		info := entry.Message
 
@@ -120,14 +115,6 @@ func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 				}
 			}
 		}
-
-		// 使用后台上下文，避免依赖 gin.Context
-		ctx := context.Background()
-		_ = service.ServiceGroupApp.SystemServiceGroup.SysErrorService.CreateSysError(ctx, &system.SysError{
-			Form:  &form,
-			Info:  &info,
-			Level: level,
-		})
 	}
 	return err
 }

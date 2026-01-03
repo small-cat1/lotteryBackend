@@ -82,4 +82,28 @@ func (r *AnnualAdminRouter) InitAnnualAdminRouter(Router *gin.RouterGroup) {
 		adminRouterWithoutRecord.GET("winner/export", annualApi.AnnualWinnerApi.ExportWinner) // 导出中奖
 		adminRouter.POST("winner/draw", annualApi.AnnualWinnerApi.RandomDraw)                 // 随机抽奖
 	}
+	// ========== 统计面板 ==========
+	{
+		adminRouterWithoutRecord.GET("dashboard/stats/:activityId", annualApi.AnnualDashboardApi.GetDashboardStats)
+		adminRouterWithoutRecord.GET("dashboard/checkInTrend/:activityId", annualApi.AnnualDashboardApi.GetCheckInTrend)
+		adminRouterWithoutRecord.GET("dashboard/prizeStats/:activityId", annualApi.AnnualDashboardApi.GetPrizeStats)
+		adminRouterWithoutRecord.GET("dashboard/recentWinners/:activityId", annualApi.AnnualDashboardApi.GetRecentWinners)
+		adminRouterWithoutRecord.GET("dashboard/hotWords/:activityId", annualApi.AnnualDashboardApi.GetHotWords)
+		adminRouterWithoutRecord.GET("dashboard/recentDanmaku/:activityId", annualApi.AnnualDashboardApi.GetRecentDanmaku)
+		adminRouterWithoutRecord.GET("dashboard/shakeRanking/:activityId", annualApi.AnnualDashboardApi.GetShakeRanking)
+	}
+
+	// ========== 系统配置 ==========
+	{
+		adminRouter.GET("config/list", annualApi.AnnualConfigApi.GetConfigList)      // 获取配置列表
+		adminRouter.GET("config/all", annualApi.AnnualConfigApi.GetAllConfig)        // 获取所有配置
+		adminRouter.GET("config/:key", annualApi.AnnualConfigApi.GetConfigByKey)     // 获取单个配置
+		adminRouter.POST("config", annualApi.AnnualConfigApi.SetConfig)              // 设置配置
+		adminRouter.POST("config/batch", annualApi.AnnualConfigApi.BatchSetConfig)   // 批量设置配置
+		adminRouter.DELETE("config/:key", annualApi.AnnualConfigApi.DeleteConfig)    // 删除配置
+		adminRouter.GET("config/wechat", annualApi.AnnualConfigApi.GetWechatConfig)  // 获取微信配置
+		adminRouter.POST("config/wechat", annualApi.AnnualConfigApi.SetWechatConfig) // 设置微信配置
+		adminRouter.GET("config/site", annualApi.AnnualConfigApi.GetSiteConfig)      // 获取站点配置
+		adminRouter.POST("config/site", annualApi.AnnualConfigApi.SetSiteConfig)     // 设置站点配置
+	}
 }

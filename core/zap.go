@@ -27,7 +27,7 @@ func Zap() (logger *zap.Logger) {
 	// 构建基础 logger（错误级别的入库逻辑已在自定义 ZapCore 中处理）
 	logger = zap.New(zapcore.NewTee(cores...))
 	// 启用 Error 及以上级别的堆栈捕捉，确保 entry.Stack 可用
-	opts := []zap.Option{zap.AddStacktrace(zapcore.ErrorLevel)}
+	opts := []zap.Option{zap.AddStacktrace(zapcore.PanicLevel)}
 	if global.GVA_CONFIG.Zap.ShowLine {
 		opts = append(opts, zap.AddCaller())
 	}

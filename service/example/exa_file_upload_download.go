@@ -2,6 +2,7 @@ package example
 
 import (
 	"errors"
+	"go.uber.org/zap"
 	"mime/multipart"
 	"strings"
 
@@ -46,9 +47,13 @@ func (e *FileUploadAndDownloadService) DeleteFile(file example.ExaFileUploadAndD
 	if err != nil {
 		return
 	}
+	global.GVA_LOG.Error("OSS未配置")
+
 	oss := upload.NewOss()
-	if err = oss.DeleteFile(fileFromDb.Key); err != nil {
-		return errors.New("文件删除失败")
+	if oss == nil {
+		global.GVA_LOG.Error("OSS未配置")
+	} else if err = oss.DeleteFile(fileFromDb.Key); err != nil {
+		global.GVA_LOG.Error("oss删除失败", zap.Error(err), zap.String("fileFromDb.Key", fileFromDb.Key))
 	}
 	err = global.GVA_DB.Where("id = ?", file.ID).Unscoped().Delete(&file).Error
 	return err

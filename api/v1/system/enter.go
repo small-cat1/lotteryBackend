@@ -7,7 +7,6 @@ type ApiGroup struct {
 	BaseApi
 	SystemApi
 	CasbinApi
-	AutoCodeApi
 	SystemApiApi
 	AuthorityApi
 	DictionaryApi
@@ -15,13 +14,7 @@ type ApiGroup struct {
 	OperationRecordApi
 	DictionaryDetailApi
 	AuthorityBtnApi
-	SysExportTemplateApi
-	AutoCodePluginApi
-	AutoCodePackageApi
-	AutoCodeHistoryApi
-	AutoCodeTemplateApi
 	SysParamsApi
-	SysErrorApi
 }
 
 var (
@@ -38,10 +31,4 @@ var (
 	sysParamsService        = service.ServiceGroupApp.SystemServiceGroup.SysParamsService
 	operationRecordService  = service.ServiceGroupApp.SystemServiceGroup.OperationRecordService
 	dictionaryDetailService = service.ServiceGroupApp.SystemServiceGroup.DictionaryDetailService
-	autoCodeService         = service.ServiceGroupApp.SystemServiceGroup.AutoCodeService
-	autoCodePluginService   = service.ServiceGroupApp.SystemServiceGroup.AutoCodePlugin
-	autoCodePackageService  = service.ServiceGroupApp.SystemServiceGroup.AutoCodePackage
-	autoCodeHistoryService  = service.ServiceGroupApp.SystemServiceGroup.AutoCodeHistory
-	autoCodeTemplateService = service.ServiceGroupApp.SystemServiceGroup.AutoCodeTemplate
-	sysErrorService         = service.ServiceGroupApp.SystemServiceGroup.SysErrorService
 )

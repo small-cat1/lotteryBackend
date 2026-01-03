@@ -8,4 +8,6 @@ type ServiceGroup struct {
 	AnnualShakeRoundService
 	AnnualPrizeService
 	AnnualWinnerService
+	AnnualDashboardService
+	AnnualConfigService
 }
