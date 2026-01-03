@@ -2,7 +2,7 @@ package initialize
 
 import (
 	"github.com/gin-gonic/gin"
-	"lotteryBackend/plugin/announcement"
+	"lotteryBackend/utils/plugin/v2"
 )
 
 func PluginInitV2(group *gin.Engine, plugins ...plugin.Plugin) {
@@ -11,5 +11,4 @@ func PluginInitV2(group *gin.Engine, plugins ...plugin.Plugin) {
 	}
 }
 func bizPluginV2(engine *gin.Engine) {
-	PluginInitV2(engine, announcement.Plugin)
 }

@@ -41,19 +41,19 @@ func Routers() *gin.Engine {
 		Router.Use(gin.Logger())
 	}
 
-	if !global.GVA_CONFIG.MCP.Separate {
-
-		sseServer := McpRun()
-
-		// 注册mcp服务
-		Router.GET(global.GVA_CONFIG.MCP.SSEPath, func(c *gin.Context) {
-			sseServer.SSEHandler().ServeHTTP(c.Writer, c.Request)
-		})
-
-		Router.POST(global.GVA_CONFIG.MCP.MessagePath, func(c *gin.Context) {
-			sseServer.MessageHandler().ServeHTTP(c.Writer, c.Request)
-		})
-	}
+	//if !global.GVA_CONFIG.MCP.Separate {
+	//
+	//	sseServer := McpRun()
+	//
+	//	// 注册mcp服务
+	//	Router.GET(global.GVA_CONFIG.MCP.SSEPath, func(c *gin.Context) {
+	//		sseServer.SSEHandler().ServeHTTP(c.Writer, c.Request)
+	//	})
+	//
+	//	Router.POST(global.GVA_CONFIG.MCP.MessagePath, func(c *gin.Context) {
+	//		sseServer.MessageHandler().ServeHTTP(c.Writer, c.Request)
+	//	})
+	//}
 
 	systemRouter := router.RouterGroupApp.System
 	exampleRouter := router.RouterGroupApp.Example
@@ -74,30 +74,26 @@ func Routers() *gin.Engine {
 	Router.GET(global.GVA_CONFIG.System.RouterPrefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	global.GVA_LOG.Info("register swagger handler")
 	// 方便统一添加路由组前缀 多服务器上线使用
-
 	PublicGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
-
 	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
-
 	{
 		// 健康监测
 		PublicGroup.GET("/health", func(c *gin.Context) {
 			c.JSON(http.StatusOK, "ok")
 		})
 	}
+	annualRouter := router.RouterGroupApp.Annual
+	annualRouter.InitAnnualAdminRouter(PrivateGroup)
 	{
 		systemRouter.InitBaseRouter(PublicGroup) // 注册基础功能路由 不做鉴权
-		systemRouter.InitInitRouter(PublicGroup) // 自动初始化相关
 	}
-
 	{
 		systemRouter.InitApiRouter(PrivateGroup, PublicGroup)               // 注册功能api路由
 		systemRouter.InitJwtRouter(PrivateGroup)                            // jwt相关路由
 		systemRouter.InitUserRouter(PrivateGroup)                           // 注册用户路由
 		systemRouter.InitMenuRouter(PrivateGroup)                           // 注册menu路由
 		systemRouter.InitSystemRouter(PrivateGroup)                         // system相关路由
-		systemRouter.InitSysVersionRouter(PrivateGroup)                     // 发版相关路由
 		systemRouter.InitCasbinRouter(PrivateGroup)                         // 权限相关路由
 		systemRouter.InitAutoCodeRouter(PrivateGroup, PublicGroup)          // 创建自动化代码
 		systemRouter.InitAuthorityRouter(PrivateGroup)                      // 注册角色路由

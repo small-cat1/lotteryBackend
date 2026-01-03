@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/minio/minio-go/v7"
 	"io"
 	"mime"
 	"mime/multipart"

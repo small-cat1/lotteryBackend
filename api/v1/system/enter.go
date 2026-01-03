@@ -3,7 +3,6 @@ package system
 import "lotteryBackend/service"
 
 type ApiGroup struct {
-	DBApi
 	JwtApi
 	BaseApi
 	SystemApi
@@ -22,7 +21,6 @@ type ApiGroup struct {
 	AutoCodeHistoryApi
 	AutoCodeTemplateApi
 	SysParamsApi
-	SysVersionApi
 	SysErrorApi
 }
 
@@ -31,7 +29,6 @@ var (
 	jwtService              = service.ServiceGroupApp.SystemServiceGroup.JwtService
 	menuService             = service.ServiceGroupApp.SystemServiceGroup.MenuService
 	userService             = service.ServiceGroupApp.SystemServiceGroup.UserService
-	initDBService           = service.ServiceGroupApp.SystemServiceGroup.InitDBService
 	casbinService           = service.ServiceGroupApp.SystemServiceGroup.CasbinService
 	baseMenuService         = service.ServiceGroupApp.SystemServiceGroup.BaseMenuService
 	authorityService        = service.ServiceGroupApp.SystemServiceGroup.AuthorityService
@@ -46,6 +43,5 @@ var (
 	autoCodePackageService  = service.ServiceGroupApp.SystemServiceGroup.AutoCodePackage
 	autoCodeHistoryService  = service.ServiceGroupApp.SystemServiceGroup.AutoCodeHistory
 	autoCodeTemplateService = service.ServiceGroupApp.SystemServiceGroup.AutoCodeTemplate
-	sysVersionService       = service.ServiceGroupApp.SystemServiceGroup.SysVersionService
 	sysErrorService         = service.ServiceGroupApp.SystemServiceGroup.SysErrorService
 )

@@ -61,17 +61,15 @@ func RegisterTables() {
 		system.Condition{},
 		system.JoinTemplate{},
 		system.SysParams{},
-		system.SysVersion{},
 		system.SysError{},
 
 		example.ExaFile{},
 		example.ExaCustomer{},
 		example.ExaFileChunk{},
 		example.ExaFileUploadAndDownload{},
-		example.ExaAttachmentCategory{},
 	)
 	if err != nil {
-		global.GVA_LOG.Error("register table failed", zap.Error(err))
+		global.GVA_LOG.Error("register table, failed", zap.Error(err))
 		os.Exit(0)
 	}
 

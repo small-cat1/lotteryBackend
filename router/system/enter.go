@@ -7,7 +7,6 @@ type RouterGroup struct {
 	JwtRouter
 	SysRouter
 	BaseRouter
-	InitRouter
 	MenuRouter
 	UserRouter
 	CasbinRouter
@@ -19,12 +18,10 @@ type RouterGroup struct {
 	AuthorityBtnRouter
 	SysExportTemplateRouter
 	SysParamsRouter
-	SysVersionRouter
 	SysErrorRouter
 }
 
 var (
-	dbApi               = api.ApiGroupApp.SystemApiGroup.DBApi
 	jwtApi              = api.ApiGroupApp.SystemApiGroup.JwtApi
 	baseApi             = api.ApiGroupApp.SystemApiGroup.BaseApi
 	casbinApi           = api.ApiGroupApp.SystemApiGroup.CasbinApi
@@ -43,6 +40,5 @@ var (
 	dictionaryDetailApi = api.ApiGroupApp.SystemApiGroup.DictionaryDetailApi
 	autoCodeTemplateApi = api.ApiGroupApp.SystemApiGroup.AutoCodeTemplateApi
 	exportTemplateApi   = api.ApiGroupApp.SystemApiGroup.SysExportTemplateApi
-	sysVersionApi       = api.ApiGroupApp.SystemApiGroup.SysVersionApi
 	sysErrorApi         = api.ApiGroupApp.SystemApiGroup.SysErrorApi
 )

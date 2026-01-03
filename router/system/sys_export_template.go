@@ -12,7 +12,7 @@ type SysExportTemplateRouter struct {
 func (s *SysExportTemplateRouter) InitSysExportTemplateRouter(Router *gin.RouterGroup, pubRouter *gin.RouterGroup) {
 	sysExportTemplateRouter := Router.Group("sysExportTemplate").Use(middleware.OperationRecord())
 	sysExportTemplateRouterWithoutRecord := Router.Group("sysExportTemplate")
-	sysExportTemplateRouterWithoutAuth := pubRouter.Group("sysExportTemplate")
+	//sysExportTemplateRouterWithoutAuth := pubRouter.Group("sysExportTemplate")
 
 	{
 		sysExportTemplateRouter.POST("createSysExportTemplate", exportTemplateApi.CreateSysExportTemplate)             // 新建导出模板
@@ -28,8 +28,8 @@ func (s *SysExportTemplateRouter) InitSysExportTemplateRouter(Router *gin.Router
 		sysExportTemplateRouterWithoutRecord.GET("exportTemplate", exportTemplateApi.ExportTemplate)                     // 导出表格模板
 		sysExportTemplateRouterWithoutRecord.GET("previewSQL", exportTemplateApi.PreviewSQL)                             // 预览SQL
 	}
-	{
-		sysExportTemplateRouterWithoutAuth.GET("exportExcelByToken", exportTemplateApi.ExportExcelByToken)       // 通过token导出表格
-		sysExportTemplateRouterWithoutAuth.GET("exportTemplateByToken", exportTemplateApi.ExportTemplateByToken) // 通过token导出模板
-	}
+	//{
+	//	sysExportTemplateRouterWithoutAuth.GET("exportExcelByToken", exportTemplateApi.ExportExcelByToken)       // 通过token导出表格
+	//	sysExportTemplateRouterWithoutAuth.GET("exportTemplateByToken", exportTemplateApi.ExportTemplateByToken) // 通过token导出模板
+	//}
 }

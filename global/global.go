@@ -3,6 +3,7 @@ package global
 import (
 	"fmt"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/redis/go-redis/v9"
 	"sync"
 
 	"github.com/gin-gonic/gin"

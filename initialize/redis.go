@@ -2,6 +2,7 @@ package initialize
 
 import (
 	"context"
+	"github.com/redis/go-redis/v9"
 
 	"lotteryBackend/config"
 	"lotteryBackend/global"

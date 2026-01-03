@@ -47,7 +47,11 @@ func (apiService *ApiService) GetApiGroups() (groups []string, groupApiMap map[s
 		if newGroup {
 			groups = append(groups, apis[i].ApiGroup)
 		}
-		groupApiMap[pathArr[1]] = apis[i].ApiGroup
+		if pathArr[1] == "annual" {
+			groupApiMap[pathArr[1]+"/"+pathArr[2]] = apis[i].ApiGroup
+		} else {
+			groupApiMap[pathArr[1]] = apis[i].ApiGroup
+		}
 	}
 	return
 }

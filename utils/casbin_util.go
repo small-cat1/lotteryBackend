@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/casbin/casbin/v2"
 	"sync"
 
 	"github.com/casbin/casbin/v2/model"

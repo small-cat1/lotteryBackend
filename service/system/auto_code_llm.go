@@ -8,6 +8,7 @@ import (
 	"io"
 	"lotteryBackend/global"
 	"lotteryBackend/model/common"
+	commonResp "lotteryBackend/model/common/response"
 	"lotteryBackend/utils/request"
 	"strings"
 )
