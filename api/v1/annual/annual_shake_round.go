@@ -8,6 +8,7 @@ import (
 	annualReq "lotteryBackend/model/annual/request"
 	"lotteryBackend/model/common/response"
 	"lotteryBackend/service"
+	"lotteryBackend/utils"
 )
 
 type AnnualShakeRoundApi struct{}
@@ -16,10 +17,21 @@ var annualShakeRoundService = service.ServiceGroupApp.AnnualServiceGroup.AnnualS
 
 // CreateShakeRound 创建摇一摇场次
 func (a *AnnualShakeRoundApi) CreateShakeRound(c *gin.Context) {
-	var round annual.AnnualShakeRound
-	if err := c.ShouldBindJSON(&round); err != nil {
-		response.FailWithMessage(err.Error(), c)
+	var req annualReq.CreateShakeRoundReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage("参数错误: "+err.Error(), c)
 		return
+	}
+
+	// 构建 Model
+	round := annual.AnnualShakeRound{
+		ActivityId:  req.ActivityId,
+		RoundName:   req.RoundName,
+		Duration:    req.Duration,
+		WinnerCount: req.WinnerCount,
+		PrizeId:     req.PrizeId,
+		Sort:        req.Sort,
+		Password:    utils.GeneratePassword(6), // 自动生成6位密码
 	}
 	if err := annualShakeRoundService.CreateShakeRound(round); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
@@ -64,10 +76,20 @@ func (a *AnnualShakeRoundApi) GetShakeRoundById(c *gin.Context) {
 
 // UpdateShakeRound 更新场次
 func (a *AnnualShakeRoundApi) UpdateShakeRound(c *gin.Context) {
-	var round annual.AnnualShakeRound
-	if err := c.ShouldBindJSON(&round); err != nil {
-		response.FailWithMessage(err.Error(), c)
+	var req annualReq.UpdateShakeRoundReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage("参数错误: "+err.Error(), c)
 		return
+	}
+
+	round := annual.AnnualShakeRound{
+		GVA_MODEL:   global.GVA_MODEL{ID: req.ID},
+		ActivityId:  req.ActivityId,
+		RoundName:   req.RoundName,
+		Duration:    req.Duration,
+		WinnerCount: req.WinnerCount,
+		PrizeId:     req.PrizeId,
+		Sort:        req.Sort,
 	}
 	if err := annualShakeRoundService.UpdateShakeRound(round); err != nil {
 		global.GVA_LOG.Error("更新失败!", zap.Error(err))

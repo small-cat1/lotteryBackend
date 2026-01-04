@@ -1,13 +1,11 @@
 package initialize
 
 import (
+	"lotteryBackend/ws"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-	"lotteryBackend/docs"
 	"lotteryBackend/global"
 	"lotteryBackend/middleware"
 	"lotteryBackend/router"
@@ -56,12 +54,17 @@ func Routers() *gin.Engine {
 	// Router.Use(middleware.Cors()) // 直接放行全部跨域请求
 	// Router.Use(middleware.CorsByRules()) // 按照配置的规则放行跨域请求
 	// global.GVA_LOG.Info("use middleware cors")
-	docs.SwaggerInfo.BasePath = global.GVA_CONFIG.System.RouterPrefix
-	Router.GET(global.GVA_CONFIG.System.RouterPrefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	global.GVA_LOG.Info("register swagger handler")
 	// 方便统一添加路由组前缀 多服务器上线使用
 	PublicGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
 	PrivateGroup := Router.Group(global.GVA_CONFIG.System.RouterPrefix)
+	// 初始化WebSocket
+	ws.Init()
+	// 注册WebSocket路由
+	ws.InitWebSocketRouter(PublicGroup)
+	appRouter := router.RouterGroupApp.App
+	appRouter.InitH5Router(PublicGroup) // H5路由
+	ConsoleRouter := router.RouterGroupApp.Console
+	ConsoleRouter.InitConsoleRouter(PublicGroup)
 	PrivateGroup.Use(middleware.JWTAuth()).Use(middleware.CasbinHandler())
 	{
 		// 健康监测

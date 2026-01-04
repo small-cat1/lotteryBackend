@@ -13,6 +13,7 @@ type AnnualShakeRound struct {
 	Duration    int        `json:"duration" gorm:"column:duration;type:int unsigned;not null;default:30;comment:游戏时长(秒)"`
 	WinnerCount int        `json:"winnerCount" gorm:"column:winner_count;type:int unsigned;not null;default:1;comment:本轮获奖人数"`
 	PrizeId     uint       `json:"prizeId" gorm:"column:prize_id;not null;default:0;comment:关联奖品ID"`
+	Password    string     `json:"password" gorm:"column:password;type:varchar(32);not null;default:'';comment:场次密码"` // 新增
 	Status      *int       `json:"status" gorm:"column:status;type:tinyint unsigned;index;not null;default:0;comment:状态：0未开始 1进行中 2已结束"`
 	StartTime   *time.Time `json:"startTime" gorm:"column:start_time;comment:实际开始时间"`
 	EndTime     *time.Time `json:"endTime" gorm:"column:end_time;comment:实际结束时间"`

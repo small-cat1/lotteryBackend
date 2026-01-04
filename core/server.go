@@ -28,7 +28,7 @@ func RunServer() {
 	if global.GVA_DB != nil {
 		system.LoadAll()
 	}
-
+	initialize.Timeout() //超时服务
 	Router := initialize.Routers()
 
 	address := fmt.Sprintf(":%d", global.GVA_CONFIG.System.Addr)

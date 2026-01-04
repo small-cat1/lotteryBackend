@@ -51,7 +51,9 @@ func (s *AnnualShakeRoundService) GetShakeRoundById(id string) (round annual.Ann
 
 // UpdateShakeRound 更新场次
 func (s *AnnualShakeRoundService) UpdateShakeRound(round annual.AnnualShakeRound) (err error) {
-	return global.GVA_DB.Model(&annual.AnnualShakeRound{}).Where("id = ?", round.ID).Updates(&round).Error
+	return global.GVA_DB.Model(&round).
+		Select("activity_id", "round_name", "duration", "winner_count", "prize_id", "sort").
+		Updates(&round).Error
 }
 
 // StartShakeRound 开始游戏
