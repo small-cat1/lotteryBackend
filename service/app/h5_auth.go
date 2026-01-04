@@ -302,14 +302,14 @@ func (s *H5AuthService) getAccessToken() (string, error) {
 // 从配置表获取微信AppID
 func (s *H5AuthService) getWechatAppId() string {
 	var config annual.AnnualConfig
-	global.GVA_DB.Where("config_key = ?", "wechat_app_id").First(&config)
+	global.GVA_DB.Where("config_key = ?", "wechat_appid").First(&config)
 	return config.ConfigValue
 }
 
 // 从配置表获取微信AppSecret
 func (s *H5AuthService) getWechatAppSecret() string {
 	var config annual.AnnualConfig
-	global.GVA_DB.Where("config_key = ?", "wechat_app_secret").First(&config)
+	global.GVA_DB.Where("config_key = ?", "wechat_secret").First(&config)
 	return config.ConfigValue
 }
 
