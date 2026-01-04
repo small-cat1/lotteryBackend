@@ -64,9 +64,10 @@ func (s *H5UserService) UserRegister(userId uint, req request.UserRegisterReq) (
 		status = 0 // 待审核
 	}
 	updates := map[string]interface{}{
-		"real_name": req.RealName,
-		"phone":     req.Phone,
-		"status":    status,
+		"real_name":     req.RealName,
+		"phone":         req.Phone,
+		"status":        status,
+		"is_registered": 1,
 	}
 	if req.Department != "" {
 		updates["department"] = req.Department

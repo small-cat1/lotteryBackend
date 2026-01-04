@@ -103,7 +103,7 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 
 	// 4. 查找或创建用户
 	var user annual.AnnualUser
-	result := global.GVA_DB.Where("open_id = ?", wxUser.OpenId).First(&user)
+	result := global.GVA_DB.Where("openid = ?", wxUser.OpenId).First(&user)
 
 	if result.RowsAffected == 0 {
 		// 创建新用户
