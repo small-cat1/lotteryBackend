@@ -55,12 +55,6 @@ func (s *H5UserService) UserRegister(userId uint, req request.UserRegisterReq) (
 		return nil, errors.New("该手机号已被使用")
 	}
 
-	// 检查工号是否已被使用
-	result = global.GVA_DB.Where("employee_no = ? AND id != ?", req.EmployeeNo, userId).First(&existUser)
-	if result.RowsAffected > 0 {
-		return nil, errors.New("该工号已被使用")
-	}
-
 	// 获取是否需要审核的配置
 	needAudit := s.getNeedAuditConfig()
 
@@ -69,14 +63,18 @@ func (s *H5UserService) UserRegister(userId uint, req request.UserRegisterReq) (
 	if needAudit {
 		status = 0 // 待审核
 	}
-
-	err := global.GVA_DB.Model(&user).Updates(map[string]interface{}{
-		"real_name":   req.RealName,
-		"phone":       req.Phone,
-		"department":  req.Department,
-		"employee_no": req.EmployeeNo,
-		"status":      status,
-	}).Error
+	updates := map[string]interface{}{
+		"real_name": req.RealName,
+		"phone":     req.Phone,
+		"status":    status,
+	}
+	if req.Department != "" {
+		updates["department"] = req.Department
+	}
+	if req.EmployeeNo != "" {
+		updates["employee_no"] = req.EmployeeNo
+	}
+	err := global.GVA_DB.Model(&user).Updates(updates).Error
 
 	if err != nil {
 		return nil, errors.New("报名失败，请稍后重试")
@@ -122,15 +120,6 @@ func (s *H5UserService) UpdateUserInfo(userId uint, req request.UpdateUserInfoRe
 	}
 	if req.Department != "" {
 		updates["department"] = req.Department
-	}
-	if req.EmployeeNo != "" {
-		// 检查工号是否已被使用
-		var existUser annual.AnnualUser
-		result := global.GVA_DB.Where("employee_no = ? AND id != ?", req.EmployeeNo, userId).First(&existUser)
-		if result.RowsAffected > 0 {
-			return nil, errors.New("该工号已被使用")
-		}
-		updates["employee_no"] = req.EmployeeNo
 	}
 
 	if len(updates) > 0 {

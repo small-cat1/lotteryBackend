@@ -16,10 +16,10 @@ type WxJsConfigReq struct {
 
 // UserRegisterReq 用户报名请求
 type UserRegisterReq struct {
-	RealName   string `json:"realName" binding:"required"`   // 真实姓名
-	Phone      string `json:"phone" binding:"required"`      // 手机号
-	Department string `json:"department" binding:"required"` // 部门
-	EmployeeNo string `json:"employeeNo" binding:"required"` // 工号
+	RealName   string `json:"realName" binding:"required"` // 真实姓名
+	Phone      string `json:"phone" binding:"required"`    // 手机号
+	Department string `json:"department"`                  // 部门
+	EmployeeNo string `json:"employeeNo"`                  // 工号
 }
 
 // UpdateUserInfoReq 更新用户信息请求
