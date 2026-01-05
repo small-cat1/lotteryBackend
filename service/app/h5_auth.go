@@ -11,6 +11,8 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/response"
+	"lotteryBackend/pkg/h5jwt"
+	"lotteryBackend/service/app/dto"
 	"lotteryBackend/utils"
 	"net/http"
 	"sort"
@@ -19,37 +21,6 @@ import (
 )
 
 type H5AuthService struct{}
-
-// H5Claims H5用户JWT Claims
-type H5Claims struct {
-	UserId   uint   `json:"userId"`
-	OpenId   string `json:"openId"`
-	Nickname string `json:"nickname"`
-	jwt.RegisteredClaims
-}
-
-// WechatUserInfo 微信用户信息
-type WechatUserInfo struct {
-	OpenId     string `json:"openid"`
-	UnionId    string `json:"unionid"`
-	Nickname   string `json:"nickname"`
-	Sex        int    `json:"sex"`
-	Province   string `json:"province"`
-	City       string `json:"city"`
-	Country    string `json:"country"`
-	HeadImgUrl string `json:"headimgurl"`
-}
-
-// WechatAccessToken 微信AccessToken
-type WechatAccessToken struct {
-	AccessToken  string `json:"access_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	OpenId       string `json:"openid"`
-	Scope        string `json:"scope"`
-	ErrCode      int    `json:"errcode"`
-	ErrMsg       string `json:"errmsg"`
-}
 
 // WechatLogin 微信登录
 func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, error) {
@@ -74,7 +45,7 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 	defer tokenResp.Body.Close()
 
 	body, _ := io.ReadAll(tokenResp.Body)
-	var accessToken WechatAccessToken
+	var accessToken dto.WechatAccessToken
 	if err := json.Unmarshal(body, &accessToken); err != nil {
 		return nil, fmt.Errorf("解析access_token失败: %v", err)
 	}
@@ -96,7 +67,7 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 	defer userResp.Body.Close()
 
 	body, _ = io.ReadAll(userResp.Body)
-	var wxUser WechatUserInfo
+	var wxUser dto.WechatUserInfo
 	if err := json.Unmarshal(body, &wxUser); err != nil {
 		return nil, fmt.Errorf("解析用户信息失败: %v", err)
 	}
@@ -143,7 +114,7 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 
 // GenerateToken 生成JWT Token
 func (s *H5AuthService) GenerateToken(user *annual.AnnualUser) (string, error) {
-	claims := H5Claims{
+	claims := h5jwt.H5Claims{
 		UserId:   user.ID,
 		OpenId:   user.OpenId,
 		Nickname: user.Nickname,
@@ -159,8 +130,8 @@ func (s *H5AuthService) GenerateToken(user *annual.AnnualUser) (string, error) {
 }
 
 // ValidateToken 验证Token
-func (s *H5AuthService) ValidateToken(tokenString string) (*H5Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &H5Claims{}, func(token *jwt.Token) (interface{}, error) {
+func (s *H5AuthService) ValidateToken(tokenString string) (*h5jwt.H5Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &h5jwt.H5Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.getJwtSecret()), nil
 	})
 
@@ -168,7 +139,7 @@ func (s *H5AuthService) ValidateToken(tokenString string) (*H5Claims, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*H5Claims); ok && token.Valid {
+	if claims, ok := token.Claims.(*h5jwt.H5Claims); ok && token.Valid {
 		return claims, nil
 	}
 

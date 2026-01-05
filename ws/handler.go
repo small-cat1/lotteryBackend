@@ -2,6 +2,7 @@ package ws
 
 import (
 	"lotteryBackend/global"
+	"lotteryBackend/pkg/h5jwt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -176,20 +177,12 @@ func (h *Handler) validateToken(token string) uint {
 	if token == "" {
 		return 0
 	}
+	// 使用共享的 h5jwt 包验证 Token
+	claims, err := h5jwt.ValidateToken(token)
+	if err != nil {
+		global.GVA_LOG.Error("Token验证失败", zap.Error(err))
+		return 0
+	}
+	return claims.UserId
 
-	// 调用认证服务验证Token
-	// TODO: 这里需要调用H5AuthService.ValidateToken
-	// 简化实现，实际应该注入服务
-
-	// 示例实现（需要替换为实际的Token验证逻辑）
-	/*
-		authService := app.H5AuthService{}
-		claims, err := authService.ValidateToken(token)
-		if err != nil {
-			return 0
-		}
-		return claims.UserId
-	*/
-
-	return 0
 }
