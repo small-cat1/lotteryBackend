@@ -3,6 +3,7 @@ package system
 import (
 	"errors"
 	"fmt"
+	"lotteryBackend/utils"
 	"strings"
 
 	"gorm.io/gorm"
@@ -85,6 +86,11 @@ func (apiService *ApiService) SyncApi() (newApis, deleteApis, ignoreApis []syste
 		ignoresFlag := false
 		for j := range ignores {
 			if ignores[j].Path == global.GVA_ROUTERS[i].Path && ignores[j].Method == global.GVA_ROUTERS[i].Method {
+				ignoresFlag = true
+			}
+			// 使用
+			ignorePrefixes := []string{"/h5/", "/ws/", "/ws", "/console/"}
+			if utils.ContainsAny(global.GVA_ROUTERS[i].Path, ignorePrefixes) {
 				ignoresFlag = true
 			}
 		}
