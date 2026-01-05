@@ -48,18 +48,12 @@ type UserBrief struct {
 
 // ==================== 签到消息 ====================
 
-// CheckInPayload 签到消息
-type CheckInPayload struct {
-	ID          uint      `json:"id"`
-	User        UserBrief `json:"user"`
-	CheckInTime time.Time `json:"checkInTime"`
-}
-
-// CheckInStatsPayload 签到统计消息
+// CheckInStatsPayload 签到统计消息（单独推送统计时使用）
 type CheckInStatsPayload struct {
-	CheckedCount int     `json:"checkedCount"`
-	TotalCount   int     `json:"totalCount"`
-	CheckRate    float64 `json:"checkRate"`
+	Total    int `json:"total"`    // 总签到数
+	Pending  int `json:"pending"`  // 待审核
+	Approved int `json:"approved"` // 已通过
+	Rejected int `json:"rejected"` // 已拒绝
 }
 
 // ==================== 弹幕消息 ====================
@@ -109,9 +103,9 @@ type RoundStartPayload struct {
 
 // RoundEndPayload 场次结束消息
 type RoundEndPayload struct {
-	RoundId uint            `json:"roundId"`
-	Ranking []RankingItem   `json:"ranking"`
-	Winners []WinnerInfo    `json:"winners"`
+	RoundId uint          `json:"roundId"`
+	Ranking []RankingItem `json:"ranking"`
+	Winners []WinnerInfo  `json:"winners"`
 }
 
 // RankingItem 排名项
@@ -200,16 +194,15 @@ const (
 	TypeCountdown     = "countdown"
 
 	// 抽奖消息
-	TypeDrawStart   = "draw_start"
-	TypeDrawResult  = "draw_result"
+	TypeDrawStart     = "draw_start"
+	TypeDrawResult    = "draw_result"
 	TypeRollingUpdate = "rolling_update"
-	TypeDrawReset   = "draw_reset"
+	TypeDrawReset     = "draw_reset"
 )
 
 // ==================== 房间类型常量 ====================
 
 const (
-	RoomTypeCheckIn = "checkin" // 签到房间
 	RoomTypeDanmaku = "danmaku" // 弹幕房间
 	RoomTypeShake   = "shake"   // 摇一摇房间
 	RoomTypeDraw    = "draw"    // 抽奖房间

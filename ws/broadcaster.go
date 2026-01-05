@@ -25,21 +25,8 @@ func GetBroadcaster() *Broadcaster {
 
 // ==================== 签到广播 ====================
 
-// BroadcastCheckIn 广播新签到
-func (b *Broadcaster) BroadcastCheckIn(activityId uint, payload CheckInPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeCheckIn, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeNewCheckIn, payload)
-
-	// 同时广播到大屏
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeNewCheckIn, payload)
-}
-
-// BroadcastCheckInStats 广播签到统计
+// BroadcastCheckInStats 广播签到统计 只广播到主持人端
 func (b *Broadcaster) BroadcastCheckInStats(activityId uint, payload CheckInStatsPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeCheckIn, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeCheckInStats, payload)
-
 	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
 	b.hub.BroadcastToRoom(screenRoomID, TypeCheckInStats, payload)
 }
@@ -201,15 +188,6 @@ func NewPrizeBrief(id uint, name, image string, level int) PrizeBrief {
 		Name:  name,
 		Image: image,
 		Level: level,
-	}
-}
-
-// NewCheckInPayload 创建签到消息
-func NewCheckInPayload(id uint, user UserBrief, checkInTime time.Time) CheckInPayload {
-	return CheckInPayload{
-		ID:          id,
-		User:        user,
-		CheckInTime: checkInTime,
 	}
 }
 

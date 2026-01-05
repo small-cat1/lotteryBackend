@@ -7,6 +7,7 @@ import (
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/request"
 	"lotteryBackend/model/app/response"
+	"lotteryBackend/service/common"
 	"time"
 )
 
@@ -102,9 +103,11 @@ func (s *H5UserService) CheckIn(userId uint, req request.CheckInReq, ip string) 
 	// 获取是否需要审核的配置
 	needAudit := s.getNeedAuditConfig()
 	global.GVA_LOG.Info("是否需要审核", zap.Any("needAudit", needAudit))
-	status := 1 // 默认通过
-	if needAudit {
-		status = 0 // 待审核
+	status := 0 // 默认待审核
+	// 不需要审核时，直接广播签到统计
+	if !needAudit {
+		status = 1
+		common.BroadcastCheckInStats(req.ActivityId)
 	}
 
 	// 创建签到记录

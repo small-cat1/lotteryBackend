@@ -25,23 +25,13 @@ func GetEventTrigger() *EventTrigger {
 
 // ==================== 签到事件 ====================
 
-// TriggerCheckIn 触发签到事件
-// 在签到成功后调用
-func (t *EventTrigger) TriggerCheckIn(activityId uint, checkInId uint, user UserBrief, checkInTime time.Time) {
-	payload := CheckInPayload{
-		ID:          checkInId,
-		User:        user,
-		CheckInTime: checkInTime,
-	}
-	t.broadcaster.BroadcastCheckIn(activityId, payload)
-}
-
 // TriggerCheckInStats 触发签到统计更新
-func (t *EventTrigger) TriggerCheckInStats(activityId uint, checkedCount, totalCount int, checkRate float64) {
+func (t *EventTrigger) TriggerCheckInStats(activityId uint, total, pending, approved, rejected int) {
 	payload := CheckInStatsPayload{
-		CheckedCount: checkedCount,
-		TotalCount:   totalCount,
-		CheckRate:    checkRate,
+		Total:    total,
+		Pending:  pending,
+		Approved: approved,
+		Rejected: rejected,
 	}
 	t.broadcaster.BroadcastCheckInStats(activityId, payload)
 }

@@ -159,8 +159,12 @@ func (h *Handler) HandleH5Connection(c *gin.Context) {
 	// 加入活动房间
 	activityId := c.Query("activityId")
 	if activityId != "" {
-		// 加入用户活动房间（接收与自己相关的消息）
-		client.JoinRoom("user:" + activityId)
+		// 加入弹幕房间（接收弹幕消息）
+		client.JoinRoom(RoomTypeDanmaku + ":" + activityId)
+		// 加入摇一摇房间（接收游戏消息）
+		client.JoinRoom(RoomTypeShake + ":" + activityId)
+		// 加入抽奖房间（接收抽奖消息）
+		client.JoinRoom(RoomTypeDraw + ":" + activityId)
 	}
 
 	client.SendMessage(TypeConnected, ConnectedPayload{

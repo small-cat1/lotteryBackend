@@ -5,6 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	annualReq "lotteryBackend/model/annual/request"
+	"lotteryBackend/service/common"
 )
 
 type AnnualCheckInService struct{}
@@ -100,21 +101,42 @@ func (s *AnnualCheckInService) UpdateCheckInStatus(req annualReq.CheckInStatusUp
 		updates["reject_reason"] = req.RejectReason
 	}
 
+	var err error
+	var activityId uint
+
 	// 批量审核
 	if len(req.Ids) > 0 {
-		return global.GVA_DB.Model(&annual.AnnualCheckIn{}).
+		// 先获取 activityId
+		var checkIn annual.AnnualCheckIn
+		global.GVA_DB.Select("activity_id").First(&checkIn, req.Ids[0])
+		activityId = checkIn.ActivityId
+
+		err = global.GVA_DB.Model(&annual.AnnualCheckIn{}).
 			Where("id IN ? AND status = 0", req.Ids).
 			Updates(updates).Error
-	}
+	} else if req.Id > 0 {
+		// 单个审核 - 先获取 activityId
+		var checkIn annual.AnnualCheckIn
+		global.GVA_DB.Select("activity_id").First(&checkIn, req.Id)
+		activityId = checkIn.ActivityId
 
-	// 单个审核
-	if req.Id > 0 {
-		return global.GVA_DB.Model(&annual.AnnualCheckIn{}).
+		err = global.GVA_DB.Model(&annual.AnnualCheckIn{}).
 			Where("id = ? AND status = 0", req.Id).
 			Updates(updates).Error
+	} else {
+		return errors.New("缺少ID参数")
 	}
 
-	return errors.New("缺少ID参数")
+	if err != nil {
+		return err
+	}
+
+	// 审核成功后广播统计
+	if activityId > 0 {
+		common.BroadcastCheckInStats(activityId)
+	}
+
+	return nil
 }
 
 // DeleteCheckIn 删除签到
