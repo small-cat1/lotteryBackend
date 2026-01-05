@@ -5,6 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	annualReq "lotteryBackend/model/annual/request"
+	"time"
 )
 
 type AnnualActivityService struct{}
@@ -48,7 +49,16 @@ func (s *AnnualActivityService) UpdateActivity(activity annual.AnnualActivity) (
 
 // UpdateActivityStatus 更新活动状态
 func (s *AnnualActivityService) UpdateActivityStatus(id uint, status int) (err error) {
-	return global.GVA_DB.Model(&annual.AnnualActivity{}).Where("id = ?", id).Update("status", status).Error
+	updates := map[string]interface{}{
+		"status": status,
+	}
+	if status == 1 {
+		updates["start_time"] = time.Now()
+	}
+	if status == 2 {
+		updates["end_time"] = time.Now()
+	}
+	return global.GVA_DB.Model(&annual.AnnualActivity{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // DeleteActivity 删除活动（安全检查）
