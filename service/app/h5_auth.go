@@ -130,25 +130,13 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 		return nil, fmt.Errorf("生成Token失败: %v", err)
 	}
 
-	// 6. 构造响应
-	isRegistered := 0
-	if user.RealName != "" {
-		isRegistered = 1
-	}
-
 	return &response.WechatLoginResp{
 		Token: token,
 		User: response.H5UserResp{
-			ID:           user.ID,
-			OpenId:       user.OpenId,
-			Nickname:     user.Nickname,
-			Avatar:       user.Avatar,
-			RealName:     user.RealName,
-			Phone:        user.Phone,
-			Department:   user.Department,
-			EmployeeNo:   user.EmployeeNo,
-			IsRegistered: isRegistered,
-			Status:       *user.Status,
+			ID:       user.ID,
+			OpenId:   user.OpenId,
+			Nickname: user.Nickname,
+			Avatar:   user.Avatar,
 		},
 	}, nil
 }

@@ -4,6 +4,7 @@ import "lotteryBackend/service"
 
 type ApiGroup struct {
 	ConsoleApi
+	CheckInApi
 }
 
 var (

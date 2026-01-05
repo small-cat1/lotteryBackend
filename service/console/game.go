@@ -113,11 +113,9 @@ func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, er
 			}
 			if user, ok := userMap[item.UserId]; ok {
 				rankItem.User = &response.UserInfo{
-					ID:         user.ID,
-					Nickname:   user.Nickname,
-					RealName:   user.RealName,
-					Avatar:     user.Avatar,
-					Department: user.Department,
+					ID:       user.ID,
+					Nickname: user.Nickname,
+					Avatar:   user.Avatar,
 				}
 			}
 			resp.Ranking = append(resp.Ranking, rankItem)
@@ -237,11 +235,9 @@ func (s *GameService) GetRanking(roundId uint, limit int) (*response.RankingList
 		var user annual.AnnualUser
 		if err := global.GVA_DB.First(&user, r.UserId).Error; err == nil {
 			item.User = &response.UserInfo{
-				ID:         user.ID,
-				Nickname:   user.Nickname,
-				Avatar:     user.Avatar,
-				RealName:   user.RealName,
-				Department: user.Department,
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Avatar:   user.Avatar,
 			}
 		}
 
@@ -274,11 +270,9 @@ func (s *GameService) GetWinners(roundId uint) (*response.WinnerListResp, error)
 		var user annual.AnnualUser
 		if err := global.GVA_DB.First(&user, w.UserId).Error; err == nil {
 			item.User = &response.UserInfo{
-				ID:         user.ID,
-				Nickname:   user.Nickname,
-				Avatar:     user.Avatar,
-				RealName:   user.RealName,
-				Department: user.Department,
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Avatar:   user.Avatar,
 			}
 		}
 
@@ -362,11 +356,9 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 			global.GVA_DB.Create(&winner)
 
 			userInfo := &response.UserInfo{
-				ID:         user.ID,
-				Nickname:   user.Nickname,
-				Avatar:     user.Avatar,
-				RealName:   user.RealName,
-				Department: user.Department,
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Avatar:   user.Avatar,
 			}
 
 			winners = append(winners, response.WinnerItem{

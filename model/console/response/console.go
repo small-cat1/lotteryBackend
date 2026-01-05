@@ -39,26 +39,22 @@ type PrizeItem struct {
 
 // CheckInStatsResp 签到统计响应
 type CheckInStatsResp struct {
-	IsOpen    bool    `json:"isOpen"`    // 签到是否开启
-	CheckedIn int     `json:"checkedIn"` // 已签到人数
-	Total     int     `json:"total"`     // 总人数
-	Rate      float64 `json:"rate"`      // 签到率
+	IsOpen   bool              `json:"isOpen"`   // 签到是否开启
+	Total    int               `json:"total"`    // 总签到人数
+	Pending  int               `json:"pending"`  // 待审核
+	Approved int               `json:"approved"` // 已通过
+	Rejected int               `json:"rejected"` // 已拒绝
+	List     []CheckInItemResp `json:"list"`     // 最新签到列表
 }
 
-// CheckInListResp 签到列表响应
-type CheckInListResp struct {
-	List     []CheckInItem `json:"list"`
-	Total    int64         `json:"total"`
-	Page     int           `json:"page"`
-	PageSize int           `json:"pageSize"`
-}
-
-// CheckInItem 签到记录
-type CheckInItem struct {
-	ID          uint      `json:"id"`
-	UserId      uint      `json:"userId"`
-	CheckInTime time.Time `json:"checkInTime"`
-	User        *UserInfo `json:"user"`
+// CheckInItemResp 签到记录
+type CheckInItemResp struct {
+	ID          uint   `json:"id"`
+	RealName    string `json:"realName"`
+	Department  string `json:"department"`
+	CheckInTime string `json:"checkInTime"`
+	Avatar      string `json:"avatar"`
+	Nickname    string `json:"nickname"`
 }
 
 // UserInfo 用户信息

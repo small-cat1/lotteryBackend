@@ -21,11 +21,6 @@ func (r *H5Router) InitH5Router(Router *gin.RouterGroup) {
 		h5Public.GET("activity/current", h5Api.GetCurrentActivity)
 		h5Public.GET("activity/list", h5Api.GetActivityList)
 		h5Public.GET("activity/:id", h5Api.GetActivityDetail)
-
-		h5Public.GET("screen/checkIn/:activityId", h5Api.GetScreenCheckInList)
-		h5Public.GET("screen/danmaku/:activityId", h5Api.GetScreenDanmakuList)
-		h5Public.GET("screen/ranking/:roundId", h5Api.GetScreenShakeRanking)
-		h5Public.GET("screen/winners/:activityId", h5Api.GetScreenWinnerList)
 	}
 
 	// ========== 需要登录 ==========

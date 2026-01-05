@@ -7,6 +7,4 @@ type ApiGroup struct {
 	H5DanmakuApi
 	H5ShakeApi
 	H5PrizeApi
-	H5ScreenApi
-	ConsoleApi
 }

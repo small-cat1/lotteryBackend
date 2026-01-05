@@ -16,13 +16,9 @@ func (r *AnnualAdminRouter) InitAnnualAdminRouter(Router *gin.RouterGroup) {
 	adminRouterWithoutRecord := Router.Group("annual")
 	// ========== 用户管理 ==========
 	{
-		adminRouter.POST("user/list", annualApi.AnnualUserApi.GetUserList)              // 获取用户列表
-		adminRouter.GET("user/:id", annualApi.AnnualUserApi.GetUserById)                // 获取用户详情
-		adminRouter.PUT("user", annualApi.AnnualUserApi.UpdateUser)                     // 更新用户
-		adminRouter.PUT("user/status", annualApi.AnnualUserApi.UpdateUserStatus)        // 更新用户状态
-		adminRouter.DELETE("user", annualApi.AnnualUserApi.DeleteUser)                  // 删除用户
-		adminRouter.DELETE("user/batch", annualApi.AnnualUserApi.DeleteUserByIds)       // 批量删除用户
-		adminRouterWithoutRecord.GET("user/export", annualApi.AnnualUserApi.ExportUser) // 导出用户
+		adminRouter.POST("user/list", annualApi.AnnualUserApi.GetUserList)        // 获取用户列表
+		adminRouter.DELETE("user", annualApi.AnnualUserApi.DeleteUser)            // 删除用户
+		adminRouter.DELETE("user/batch", annualApi.AnnualUserApi.DeleteUserByIds) // 批量删除用户
 	}
 
 	// ========== 活动管理 ==========

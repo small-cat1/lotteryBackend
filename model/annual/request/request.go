@@ -4,25 +4,10 @@ import (
 	"lotteryBackend/model/common/request"
 )
 
-// ===== 用户相关 =====
-
-// UserRegister 用户报名请求
-type UserRegister struct {
-	RealName   string `json:"realName" binding:"required"`
-	Department string `json:"department" binding:"required"`
-	Phone      string `json:"phone" binding:"required"`
-	EmployeeNo string `json:"employeeNo"`
-}
-
 // UserSearch 用户搜索
 type UserSearch struct {
 	request.PageInfo
-	Nickname     string `json:"nickname"`
-	RealName     string `json:"realName"`
-	Department   string `json:"department"`
-	Phone        string `json:"phone"`
-	IsRegistered *int   `json:"isRegistered"`
-	Status       *int   `json:"status"`
+	Nickname string `json:"nickname"`
 }
 
 // ===== 活动相关 =====

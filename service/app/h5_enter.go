@@ -8,5 +8,4 @@ type H5ServiceGroup struct {
 	H5DanmakuService
 	H5ShakeService
 	H5PrizeService
-	ConsoleService
 }

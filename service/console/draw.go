@@ -125,11 +125,9 @@ func (s *DrawService) doDraw(activityId uint, candidates []uint, count int, priz
 		global.GVA_DB.Create(&winner)
 
 		userInfo := &response.UserInfo{
-			ID:         user.ID,
-			Nickname:   user.Nickname,
-			Avatar:     user.Avatar,
-			RealName:   user.RealName,
-			Department: user.Department,
+			ID:       user.ID,
+			Nickname: user.Nickname,
+			Avatar:   user.Avatar,
 		}
 
 		winners = append(winners, response.WinnerItem{
@@ -195,11 +193,9 @@ func (s *DrawService) GetAllWinners(activityId uint, winType int) (*response.Win
 		var user annual.AnnualUser
 		if err := global.GVA_DB.First(&user, w.UserId).Error; err == nil {
 			item.User = &response.UserInfo{
-				ID:         user.ID,
-				Nickname:   user.Nickname,
-				Avatar:     user.Avatar,
-				RealName:   user.RealName,
-				Department: user.Department,
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Avatar:   user.Avatar,
 			}
 		}
 

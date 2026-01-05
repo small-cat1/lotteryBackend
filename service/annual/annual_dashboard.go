@@ -146,11 +146,7 @@ func (s *AnnualDashboardService) GetRecentWinners(activityId string, limit int) 
 	for _, winner := range winners {
 		userName := ""
 		avatar := ""
-		if winner.User.RealName != "" {
-			userName = winner.User.RealName
-		} else {
-			userName = winner.User.Nickname
-		}
+		userName = winner.User.Nickname
 		avatar = winner.User.Avatar
 
 		prizeName := ""
@@ -226,12 +222,7 @@ func (s *AnnualDashboardService) GetRecentDanmaku(activityId string, limit int) 
 
 	for _, danmaku := range danmakus {
 		userName := ""
-		if danmaku.User.RealName != "" {
-			userName = danmaku.User.RealName
-		} else {
-			userName = danmaku.User.Nickname
-		}
-
+		userName = danmaku.User.Nickname
 		list = append(list, RecentDanmakuItem{
 			ID:       danmaku.ID,
 			UserName: userName,
@@ -266,12 +257,7 @@ func (s *AnnualDashboardService) GetShakeRanking(activityId string, limit int) (
 
 	for i, score := range scores {
 		userName := ""
-		if score.User.RealName != "" {
-			userName = score.User.RealName
-		} else {
-			userName = score.User.Nickname
-		}
-
+		userName = score.User.Nickname
 		list = append(list, ShakeRankingItem{
 			Rank:     i + 1,
 			UserName: userName,

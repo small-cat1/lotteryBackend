@@ -10,40 +10,64 @@ import (
 
 type CheckInService struct{}
 
-// GetCheckInStats 获取签到统计（包含状态）
-func (s *CheckInService) GetCheckInStats(activityId uint) (*response.CheckInStatsResp, error) {
+// GetCheckInStats 获取签到统计（包含开关状态和最新列表）
+func (s *CheckInService) GetCheckInStats(activityId uint, limit int) (*response.CheckInStatsResp, error) {
 	// 获取签到开关状态
-	isOpen, err := common.GetCheckInSwitch(activityId)
-	if err != nil {
-		isOpen = false
+	isOpen, _ := common.GetCheckInSwitch(activityId)
+
+	// 按状态统计
+	type StatusCount struct {
+		Status int   `json:"status"`
+		Count  int64 `json:"count"`
 	}
 
-	// 从Redis获取已签到人数
-	checkedCount, err := common.GetCheckInCount(activityId)
-	if err != nil {
-		// Redis出错，降级查数据库
-		global.GVA_DB.Model(&annual.AnnualCheckIn{}).
-			Where("activity_id = ?", activityId).
-			Count(&checkedCount)
+	var results []StatusCount
+	global.GVA_DB.Model(&annual.AnnualCheckIn{}).
+		Select("status, COUNT(*) as count").
+		Where("activity_id = ?", activityId).
+		Group("status").
+		Scan(&results)
+
+	stats := &response.CheckInStatsResp{
+		IsOpen: isOpen,
+		List:   []response.CheckInItemResp{},
+	}
+	for _, r := range results {
+		stats.Total += int(r.Count)
+		switch r.Status {
+		case 0:
+			stats.Pending = int(r.Count)
+		case 1:
+			stats.Approved = int(r.Count)
+		case 2:
+			stats.Rejected = int(r.Count)
+		}
 	}
 
-	// 总人数（已报名且通过审核）
-	var totalCount int64
-	global.GVA_DB.Model(&annual.AnnualUser{}).
-		Where("status = ?", 1).
-		Count(&totalCount)
-
-	var rate float64 = 0
-	if totalCount > 0 {
-		rate = float64(checkedCount) / float64(totalCount) * 100
+	// 获取最新签到列表
+	if limit <= 0 {
+		limit = 10
 	}
 
-	return &response.CheckInStatsResp{
-		IsOpen:    isOpen,
-		CheckedIn: int(checkedCount),
-		Total:     int(totalCount),
-		Rate:      rate,
-	}, nil
+	var checkIns []annual.AnnualCheckIn
+	global.GVA_DB.Where("activity_id = ?", activityId).
+		Preload("User").
+		Order("check_in_time DESC").
+		Limit(limit).
+		Find(&checkIns)
+
+	for _, c := range checkIns {
+		stats.List = append(stats.List, response.CheckInItemResp{
+			ID:          c.ID,
+			RealName:    c.RealName,
+			Department:  c.Department,
+			CheckInTime: c.CheckInTime.Format("15:04:05"),
+			Avatar:      c.User.Avatar,
+			Nickname:    c.User.Nickname,
+		})
+	}
+
+	return stats, nil
 }
 
 // OpenCheckIn 开启签到
@@ -62,77 +86,6 @@ func (s *CheckInService) OpenCheckIn(activityId uint) error {
 // CloseCheckIn 关闭签到
 func (s *CheckInService) CloseCheckIn(activityId uint) error {
 	return common.SetCheckInSwitch(activityId, false)
-}
-
-// GetCheckInList 获取签到列表
-func (s *CheckInService) GetCheckInList(activityId uint, page, pageSize int, keyword string) (*response.CheckInListResp, error) {
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 20
-	}
-
-	query := global.GVA_DB.Model(&annual.AnnualCheckIn{}).Where("activity_id = ?", activityId)
-
-	// 关键词搜索
-	if keyword != "" {
-		var userIds []uint
-		global.GVA_DB.Model(&annual.AnnualUser{}).
-			Where("nickname LIKE ? OR real_name LIKE ? OR phone LIKE ?",
-				"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%").
-			Pluck("id", &userIds)
-		if len(userIds) > 0 {
-			query = query.Where("user_id IN ?", userIds)
-		} else {
-			return &response.CheckInListResp{
-				List:     []response.CheckInItem{},
-				Total:    0,
-				Page:     page,
-				PageSize: pageSize,
-			}, nil
-		}
-	}
-
-	var total int64
-	query.Count(&total)
-
-	var checkIns []annual.AnnualCheckIn
-	query.Order("check_in_time DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
-		Find(&checkIns)
-
-	list := make([]response.CheckInItem, 0, len(checkIns))
-	for _, c := range checkIns {
-		item := response.CheckInItem{
-			ID:          c.ID,
-			UserId:      c.UserId,
-			CheckInTime: c.CheckInTime,
-		}
-
-		// 获取用户信息
-		var user annual.AnnualUser
-		if err := global.GVA_DB.First(&user, c.UserId).Error; err == nil {
-			item.User = &response.UserInfo{
-				ID:         user.ID,
-				Nickname:   user.Nickname,
-				Avatar:     user.Avatar,
-				RealName:   user.RealName,
-				Department: user.Department,
-				Phone:      user.Phone,
-			}
-		}
-
-		list = append(list, item)
-	}
-
-	return &response.CheckInListResp{
-		List:     list,
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	}, nil
 }
 
 // SyncCheckInUsersToRedis 同步签到用户到Redis（启动时或数据恢复用）

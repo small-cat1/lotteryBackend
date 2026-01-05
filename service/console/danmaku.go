@@ -47,11 +47,9 @@ func (s *DanmakuService) GetDanmakuList(activityId uint, limit int, status int) 
 		var user annual.AnnualUser
 		if err := global.GVA_DB.First(&user, d.UserId).Error; err == nil {
 			item.User = &response.UserInfo{
-				ID:         user.ID,
-				Nickname:   user.Nickname,
-				Avatar:     user.Avatar,
-				RealName:   user.RealName,
-				Department: user.Department,
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Avatar:   user.Avatar,
 			}
 		}
 

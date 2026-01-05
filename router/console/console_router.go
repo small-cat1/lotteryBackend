@@ -8,7 +8,8 @@ import (
 type ConsoleRouter struct{}
 
 func (r *ConsoleRouter) InitConsoleRouter(Router *gin.RouterGroup) {
-	consoleApi := api.ApiGroupApp.ConsoleApi
+	consoleApi := api.ApiGroupApp.ConsoleApi.ConsoleApi
+	checkInApi := api.ApiGroupApp.ConsoleApi.CheckInApi
 
 	// ========== 控制台接口 ==========
 	consoleGroup := Router.Group("console")
@@ -18,10 +19,9 @@ func (r *ConsoleRouter) InitConsoleRouter(Router *gin.RouterGroup) {
 		consoleGroup.GET("/prizes", consoleApi.GetPrizeList)                    // 获取奖品列表
 
 		// ---------- 签到管理 ----------
-		consoleGroup.GET("/checkin/stats", consoleApi.GetCheckInStats) // 获取签到统计（包含状态）
-		consoleGroup.POST("/checkin/open", consoleApi.OpenCheckIn)     // 开启签到
-		consoleGroup.POST("/checkin/close", consoleApi.CloseCheckIn)   // 关闭签到
-		consoleGroup.GET("/checkin/list", consoleApi.GetCheckInList)   // 获取签到列表
+		consoleGroup.GET("/checkin/stats", checkInApi.GetCheckInStats) // 获取签到统计（包含状态）
+		consoleGroup.POST("/checkin/open", checkInApi.OpenCheckIn)     // 开启签到
+		consoleGroup.POST("/checkin/close", checkInApi.CloseCheckIn)   // 关闭签到
 
 		// ---------- 弹幕管理 ----------
 		consoleGroup.GET("/danmaku/list", consoleApi.GetDanmakuList) // 获取弹幕列表
