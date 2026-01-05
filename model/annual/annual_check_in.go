@@ -11,7 +11,7 @@ type AnnualCheckIn struct {
 	Phone        string    `json:"phone" gorm:"column:phone;type:varchar(20);index;not null;default:'';comment:手机号"`
 	Department   string    `json:"department" gorm:"column:department;type:varchar(64);not null;default:'';comment:部门"`
 	EmployeeNo   string    `json:"employeeNo" gorm:"column:employee_no;type:varchar(32);not null;default:'';comment:工号"`
-	Status       int       `json:"status" gorm:"column:status;type:tinyint unsigned;not null;default:1;comment:状态：0待审核 1已通过 2已拒绝"`
+	Status       int       `json:"status" gorm:"column:status;type:tinyint unsigned;not null;default:0;comment:状态：0待审核 1已通过 2已拒绝"`
 	RejectReason string    `json:"rejectReason" gorm:"column:reject_reason;type:varchar(255);not null;default:'';comment:拒绝原因"`
 	CheckInTime  time.Time `json:"checkInTime" gorm:"column:check_in_time;not null;default:CURRENT_TIMESTAMP;comment:签到时间"`
 	Ip           string    `json:"ip" gorm:"column:ip;type:varchar(64);not null;default:'';comment:签到IP"`

@@ -6,6 +6,7 @@ import (
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
 	"lotteryBackend/service/common"
+	"time"
 )
 
 type CheckInService struct{}
@@ -61,7 +62,7 @@ func (s *CheckInService) GetCheckInStats(activityId uint, limit int) (*response.
 			ID:          c.ID,
 			RealName:    c.RealName,
 			Department:  c.Department,
-			CheckInTime: c.CheckInTime.Format("15:04:05"),
+			CheckInTime: c.CheckInTime.Format(time.DateTime),
 			Avatar:      c.User.Avatar,
 			Nickname:    c.User.Nickname,
 		})
