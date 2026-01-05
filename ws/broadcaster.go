@@ -2,6 +2,7 @@ package ws
 
 import (
 	"fmt"
+	"lotteryBackend/model/console/response"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func GetBroadcaster() *Broadcaster {
 // ==================== 签到广播 ====================
 
 // BroadcastCheckInStats 广播签到统计 只广播到主持人端
-func (b *Broadcaster) BroadcastCheckInStats(activityId uint, payload CheckInStatsPayload) {
+func (b *Broadcaster) BroadcastCheckInStats(activityId uint, payload *response.CheckInStatsResp) {
 	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
 	b.hub.BroadcastToRoom(screenRoomID, TypeCheckInStats, payload)
 }

@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"lotteryBackend/model/console/response"
 	"time"
 )
 
@@ -26,14 +27,8 @@ func GetEventTrigger() *EventTrigger {
 // ==================== 签到事件 ====================
 
 // TriggerCheckInStats 触发签到统计更新
-func (t *EventTrigger) TriggerCheckInStats(activityId uint, total, pending, approved, rejected int) {
-	payload := CheckInStatsPayload{
-		Total:    total,
-		Pending:  pending,
-		Approved: approved,
-		Rejected: rejected,
-	}
-	t.broadcaster.BroadcastCheckInStats(activityId, payload)
+func (t *EventTrigger) TriggerCheckInStats(activityId uint, stats *response.CheckInStatsResp) {
+	t.broadcaster.BroadcastCheckInStats(activityId, stats)
 }
 
 // ==================== 弹幕事件 ====================
