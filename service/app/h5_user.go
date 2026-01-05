@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"go.uber.org/zap"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/request"
@@ -100,7 +101,7 @@ func (s *H5UserService) CheckIn(userId uint, req request.CheckInReq, ip string) 
 
 	// 获取是否需要审核的配置
 	needAudit := s.getNeedAuditConfig()
-
+	global.GVA_LOG.Info("是否需要审核", zap.Any("needAudit", needAudit))
 	status := 1 // 默认通过
 	if needAudit {
 		status = 0 // 待审核
