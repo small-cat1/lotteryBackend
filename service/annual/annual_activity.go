@@ -54,6 +54,7 @@ func (s *AnnualActivityService) UpdateActivityStatus(id uint, status int) (err e
 	}
 	if status == 1 {
 		updates["start_time"] = time.Now()
+		updates["end_time"] = time.Now().Add(2 * time.Hour)
 	}
 	if status == 2 {
 		updates["end_time"] = time.Now()
