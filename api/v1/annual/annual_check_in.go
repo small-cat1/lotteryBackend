@@ -46,6 +46,51 @@ func (a *AnnualCheckInApi) GetCheckInStats(c *gin.Context) {
 	response.OkWithData(stats, c)
 }
 
+// UpdateCheckIn 更新签到信息
+func (a *AnnualCheckInApi) UpdateCheckIn(c *gin.Context) {
+	var req annualReq.CheckInUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := annualCheckInService.UpdateCheckIn(req); err != nil {
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		response.FailWithMessage("更新失败: "+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("更新成功", c)
+}
+
+// UpdateCheckInStatus 更新签到状态
+func (a *AnnualCheckInApi) UpdateCheckInStatus(c *gin.Context) {
+	var req annualReq.CheckInStatusUpdate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := annualCheckInService.UpdateCheckInStatus(req); err != nil {
+		global.GVA_LOG.Error("审核失败!", zap.Error(err))
+		response.FailWithMessage("审核失败: "+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("审核成功", c)
+}
+
+// DeleteCheckIn 删除签到
+func (a *AnnualCheckInApi) DeleteCheckIn(c *gin.Context) {
+	var req annualReq.CheckInDelete
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := annualCheckInService.DeleteCheckIn(req); err != nil {
+		global.GVA_LOG.Error("删除失败!", zap.Error(err))
+		response.FailWithMessage("删除失败: "+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("删除成功", c)
+}
+
 // ExportCheckIn 导出签到
 func (a *AnnualCheckInApi) ExportCheckIn(c *gin.Context) {
 	var pageInfo annualReq.CheckInSearch

@@ -36,6 +36,9 @@ func (r *AnnualAdminRouter) InitAnnualAdminRouter(Router *gin.RouterGroup) {
 	{
 		adminRouter.POST("checkIn/list", annualApi.AnnualCheckInApi.GetCheckInList)              // 获取签到列表
 		adminRouter.GET("checkIn/stats/:activityId", annualApi.AnnualCheckInApi.GetCheckInStats) // 签到统计
+		adminRouter.PUT("checkIn", annualApi.AnnualCheckInApi.UpdateCheckIn)                     // 更新签到信息
+		adminRouter.PUT("checkIn/status", annualApi.AnnualCheckInApi.UpdateCheckInStatus)        // 更新签到状态
+		adminRouter.DELETE("checkIn", annualApi.AnnualCheckInApi.DeleteCheckIn)                  // 删除签到
 		adminRouterWithoutRecord.GET("checkIn/export", annualApi.AnnualCheckInApi.ExportCheckIn) // 导出签到
 	}
 

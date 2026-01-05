@@ -1,9 +1,5 @@
 package request
 
-import (
-	"lotteryBackend/model/common/request"
-)
-
 // ===== 通用请求 =====
 
 type GetById struct {
@@ -22,14 +18,6 @@ type UpdateStatus struct {
 // ===== 用户相关 =====
 
 // ===== 活动相关 =====
-
-// ===== 签到相关 =====
-
-type CheckInSearch struct {
-	request.PageInfo
-	ActivityId uint `json:"activityId" form:"activityId"`
-	UserId     uint `json:"userId" form:"userId"`
-}
 
 // ===== 弹幕相关 =====
 
