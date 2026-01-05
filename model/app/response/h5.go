@@ -25,26 +25,6 @@ type WechatConfigResp struct {
 
 // ========== 用户相关 ==========
 
-// H5UserResp 用户信息响应
-type H5UserResp struct {
-	ID           uint   `json:"ID"`
-	OpenId       string `json:"openId"`
-	Nickname     string `json:"nickname"`
-	Avatar       string `json:"avatar"`
-	RealName     string `json:"realName"`
-	Phone        string `json:"phone"`
-	Department   string `json:"department"`
-	EmployeeNo   string `json:"employeeNo"`
-	IsRegistered int    `json:"isRegistered"` // 0未报名 1已报名
-	Status       int    `json:"status"`       // 0待审核 1已通过 2已拒绝
-}
-
-// AuditStatusResp 审核状态响应
-type AuditStatusResp struct {
-	Status       int    `json:"status"`       // 0待审核 1已通过 2已拒绝
-	RejectReason string `json:"rejectReason"` // 拒绝原因
-}
-
 // ========== 活动相关 ==========
 
 // H5ActivityResp 活动信息响应
@@ -67,13 +47,6 @@ type H5ActivityResp struct {
 type CheckInStatusResp struct {
 	IsCheckedIn bool       `json:"isCheckedIn"` // 是否已签到
 	CheckInTime *time.Time `json:"checkInTime"` // 签到时间
-}
-
-// CheckInRecordResp 签到记录响应
-type CheckInRecordResp struct {
-	ID          uint        `json:"id"`
-	User        H5UserBrief `json:"user"`
-	CheckInTime time.Time   `json:"checkInTime"`
 }
 
 // CheckInStatsResp 签到统计响应
@@ -164,23 +137,4 @@ type WinningResp struct {
 	Status      int           `json:"status"`  // 0未领取 1已领取
 	ReceiveTime *time.Time    `json:"receiveTime"`
 	CreatedAt   time.Time     `json:"createdAt"`
-}
-
-// ========== 通用 ==========
-
-// H5UserBrief 用户简要信息
-type H5UserBrief struct {
-	ID         uint   `json:"ID"`
-	Nickname   string `json:"nickname"`
-	Avatar     string `json:"avatar"`
-	RealName   string `json:"realName"`
-	Department string `json:"department"`
-}
-
-// H5PageResult 分页结果
-type H5PageResult struct {
-	List     interface{} `json:"list"`
-	Total    int64       `json:"total"`
-	Page     int         `json:"page"`
-	PageSize int         `json:"pageSize"`
 }

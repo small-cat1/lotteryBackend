@@ -4,6 +4,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/common/response"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -84,31 +85,39 @@ func H5AuthOptional() gin.HandlerFunc {
 // H5RegisteredRequired 要求用户已报名且通过审核
 func H5RegisteredRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user, exists := c.Get("h5User")
-		if !exists {
-			response.FailWithMessage("请先登录", c)
+		userId := c.GetUint("h5UserId")
+
+		// 从路径或query获取activityId
+		activityIdStr := c.Param("activityId")
+		if activityIdStr == "" {
+			activityIdStr = c.Query("activityId")
+		}
+		if activityIdStr == "" {
+			// 尝试从body获取（需要读取body）
+			response.FailWithMessage("缺少活动ID", c)
 			c.Abort()
 			return
 		}
 
-		h5User := user.(*annual.AnnualUser)
+		activityId, _ := strconv.ParseUint(activityIdStr, 10, 64)
 
-		// 检查是否已报名
-		if h5User.RealName == "" {
-			response.FailWithDetailed(gin.H{"needRegister": true}, "请先完成报名", c)
+		var checkIn annual.AnnualCheckIn
+		result := global.GVA_DB.Where("activity_id = ? AND user_id = ?", activityId, userId).First(&checkIn)
+
+		if result.RowsAffected == 0 {
+			response.FailWithDetailed(nil, "请先完成签到", c)
 			c.Abort()
 			return
 		}
 
-		// 检查审核状态
-		if *h5User.Status == 0 {
-			response.FailWithDetailed(gin.H{"pending": true}, "您的报名正在审核中", c)
+		if checkIn.Status == 0 {
+			response.FailWithDetailed(nil, "您的签到正在审核中", c)
 			c.Abort()
 			return
 		}
 
-		if *h5User.Status == 2 {
-			response.FailWithDetailed(gin.H{"rejected": true}, "您的报名未通过审核", c)
+		if checkIn.Status == 2 {
+			response.FailWithDetailed(nil, "您的签到未通过审核", c)
 			c.Abort()
 			return
 		}

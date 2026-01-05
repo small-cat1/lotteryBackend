@@ -18,10 +18,14 @@ var h5UserService = service.ServiceGroupApp.AppServiceGroup.H5UserService
 // @Produce application/json
 // @Success 200 {object} response.Response{data=appResp.H5UserResp}
 // @Router /h5/user/info [get]
+// GetUserInfo 获取用户信息
 func (a *H5UserApi) GetUserInfo(c *gin.Context) {
+	var req request.GetUserInfoReq
+	_ = c.ShouldBindQuery(&req)
+
 	userId := c.GetUint("h5UserId")
 
-	result, err := h5UserService.GetUserInfo(userId)
+	result, err := h5UserService.GetUserInfo(userId, req.ActivityId)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
@@ -30,52 +34,18 @@ func (a *H5UserApi) GetUserInfo(c *gin.Context) {
 	response.OkWithData(result, c)
 }
 
-// UserRegister 用户报名
-// @Tags H5-用户
-// @Summary 用户报名
-// @Security ApiKeyAuth
-// @accept application/json
-// @Produce application/json
-// @Param data body request.UserRegisterReq true "报名信息"
-// @Success 200 {object} response.Response{data=appResp.H5UserResp}
-// @Router /h5/user/register [post]
-func (a *H5UserApi) UserRegister(c *gin.Context) {
-	var req request.UserRegisterReq
+// CheckIn 用户签到
+func (a *H5UserApi) CheckIn(c *gin.Context) {
+	var req request.CheckInReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.FailWithMessage("参数错误: "+err.Error(), c)
 		return
 	}
 
 	userId := c.GetUint("h5UserId")
+	ip := c.ClientIP()
 
-	result, err := h5UserService.UserRegister(userId, req)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-
-	response.OkWithData(result, c)
-}
-
-// UpdateUserInfo 更新用户信息
-// @Tags H5-用户
-// @Summary 更新用户信息
-// @Security ApiKeyAuth
-// @accept application/json
-// @Produce application/json
-// @Param data body request.UpdateUserInfoReq true "用户信息"
-// @Success 200 {object} response.Response{data=appResp.H5UserResp}
-// @Router /h5/user/info [put]
-func (a *H5UserApi) UpdateUserInfo(c *gin.Context) {
-	var req request.UpdateUserInfoReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage("参数错误", c)
-		return
-	}
-
-	userId := c.GetUint("h5UserId")
-
-	result, err := h5UserService.UpdateUserInfo(userId, req)
+	result, err := h5UserService.CheckIn(userId, req, ip)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
@@ -85,16 +55,11 @@ func (a *H5UserApi) UpdateUserInfo(c *gin.Context) {
 }
 
 // GetAuditStatus 获取审核状态
-// @Tags H5-用户
-// @Summary 获取审核状态
-// @Security ApiKeyAuth
-// @Produce application/json
-// @Success 200 {object} response.Response{data=appResp.AuditStatusResp}
-// @Router /h5/user/audit [get]
 func (a *H5UserApi) GetAuditStatus(c *gin.Context) {
 	userId := c.GetUint("h5UserId")
+	activityId := c.GetUint("activityId") // 从query获取
 
-	result, err := h5UserService.GetAuditStatus(userId)
+	result, err := h5UserService.GetAuditStatus(userId, activityId)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
