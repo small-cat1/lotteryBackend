@@ -13,7 +13,7 @@ import (
 type H5ShakeService struct{}
 
 // GetCurrentRound 获取当前进行中的场次
-func (s *H5ShakeService) GetCurrentRound(activityId uint) (*response.ShakeRoundResp, error) {
+func (s *H5ShakeService) GetCurrentRound(activityId, userId uint) (*response.ShakeRoundResp, error) {
 	// 1. 先从缓存获取当前场次ID
 	roundId, err := cache.GetCurrentRound(activityId)
 	if err != nil {
@@ -37,26 +37,15 @@ func (s *H5ShakeService) GetCurrentRound(activityId uint) (*response.ShakeRoundR
 	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
 		return nil, nil
 	}
-	return s.toRoundResp(&round), nil
-}
+	resp := s.toRoundResp(&round)
 
-// GetRoundList 获取场次列表
-func (s *H5ShakeService) GetRoundList(activityId uint) ([]response.ShakeRoundResp, error) {
-	var rounds []annual.AnnualShakeRound
-	err := global.GVA_DB.Where("activity_id = ?", activityId).
-		Order("sort ASC, id ASC").
-		Find(&rounds).Error
-
-	if err != nil {
-		return nil, err
+	// ⭐ 新增：获取当前用户的分数（从 Redis）
+	if userId > 0 {
+		myScore, _ := cache.GetUserScore(roundId, userId)
+		resp.MyScore = int(myScore)
 	}
 
-	result := make([]response.ShakeRoundResp, len(rounds))
-	for i, r := range rounds {
-		result[i] = *s.toRoundResp(&r)
-	}
-
-	return result, nil
+	return resp, nil
 }
 
 // GetShakeRanking 获取实时排名

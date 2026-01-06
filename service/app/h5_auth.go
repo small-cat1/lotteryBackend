@@ -112,7 +112,7 @@ func (s *H5AuthService) WechatLogin(code string, activityId uint) (*response.Wec
 		}
 	}
 	// 5. 生成JWT Token
-	token, err := s.GenerateToken(&user)
+	token, err := h5jwt.GenerateToken(&user)
 	if err != nil {
 		return nil, fmt.Errorf("生成Token失败: %v", err)
 	}
@@ -127,23 +127,6 @@ func (s *H5AuthService) WechatLogin(code string, activityId uint) (*response.Wec
 			CheckIn:  checkIn,
 		},
 	}, nil
-}
-
-// GenerateToken 生成JWT Token
-func (s *H5AuthService) GenerateToken(user *annual.AnnualUser) (string, error) {
-	claims := h5jwt.H5Claims{
-		UserId:   user.ID,
-		OpenId:   user.OpenId,
-		Nickname: user.Nickname,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // 7天过期
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "annual-h5",
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.getJwtSecret()))
 }
 
 // ValidateToken 验证Token
@@ -169,7 +152,7 @@ func (s *H5AuthService) RefreshToken(userId uint) (string, error) {
 	if err := global.GVA_DB.First(&user, userId).Error; err != nil {
 		return "", err
 	}
-	return s.GenerateToken(&user)
+	return h5jwt.GenerateToken(&user)
 }
 
 // GetWxJsConfig 获取微信JS-SDK配置

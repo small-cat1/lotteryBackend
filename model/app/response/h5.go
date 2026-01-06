@@ -81,6 +81,7 @@ type ShakeRoundResp struct {
 	StartTime   *time.Time    `json:"startTime"`
 	EndTime     *time.Time    `json:"endTime"`
 	EndTimeMs   int64         `json:"endTimeMs"` // 结束时间戳（毫秒）
+	MyScore     int           `json:"myScore"`   // ⭐ 新增
 }
 
 // ShakeRankingResp 摇一摇排名响应

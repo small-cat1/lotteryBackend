@@ -26,8 +26,8 @@ func (a *H5ShakeApi) GetCurrentRound(c *gin.Context) {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
-
-	result, err := h5ShakeService.GetCurrentRound(uint(activityId))
+	userId := c.GetUint("h5UserId")
+	result, err := h5ShakeService.GetCurrentRound(uint(activityId), userId)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
