@@ -60,7 +60,12 @@ func (s *GameService) StartGame(roundId uint, password string) (int64, error) {
 	// 设置Redis
 	cache.SetCurrentRound(round.ActivityId, roundId, duration)
 	cache.SetRoundStatus(roundId, RoundStatusPlaying)
-
+	cache.SetRoundInfo(roundId, &cache.RoundInfoCache{
+		ID:          round.ID,
+		ActivityId:  round.ActivityId,
+		WinnerCount: round.WinnerCount,
+		Duration:    round.Duration,
+	})
 	// ⭐ 广播游戏开始
 	gameStartPayload := ws.GameStartPayload{
 		RoundId:  roundId,

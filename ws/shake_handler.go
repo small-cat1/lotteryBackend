@@ -51,9 +51,22 @@ func (h *ShakeHandler) HandleShakeScore(client *Client, payload string) {
 	}
 
 	// 获取场次信息（用于广播）
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.Select("id, activity_id, winner_count").First(&round, roundId).Error; err != nil {
-		return
+	// ⭐ 从缓存获取场次信息
+	roundInfo, err := cache.GetRoundInfo(roundId)
+	if err != nil {
+		// 缓存未命中，回退到数据库
+		var round annual.AnnualShakeRound
+		if err := global.GVA_DB.Select("id, activity_id, winner_count").First(&round, roundId).Error; err != nil {
+			return
+		}
+		roundInfo = &cache.RoundInfoCache{
+			ID:          round.ID,
+			ActivityId:  round.ActivityId,
+			WinnerCount: round.WinnerCount,
+			Duration:    round.Duration,
+		}
+		// 回填缓存
+		go cache.SetRoundInfo(roundId, roundInfo)
 	}
 
 	// 更新 Redis 中的分数（使用 ZSet，只保留最高分）
@@ -62,10 +75,10 @@ func (h *ShakeHandler) HandleShakeScore(client *Client, payload string) {
 		cache.IncrUserScore(roundId, userId, float64(score)-currentScore)
 
 		// 分数变化，广播排名更新
-		go h.broadcastRankingUpdate(round.ActivityId, roundId, round.WinnerCount)
+		go h.broadcastRankingUpdate(roundInfo.ActivityId, roundId, roundInfo.WinnerCount)
 	}
 
-	global.GVA_LOG.Debug("收到摇一摇分数",
+	global.GVA_LOG.Info("收到摇一摇分数",
 		zap.Uint("userId", userId),
 		zap.Uint("roundId", roundId),
 		zap.Int("score", score))
