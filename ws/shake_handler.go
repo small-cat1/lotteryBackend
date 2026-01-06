@@ -73,7 +73,6 @@ func (h *ShakeHandler) HandleShakeScore(client *Client, payload string) {
 	currentScore, _ := cache.GetUserScore(roundId, userId)
 	if float64(score) > currentScore {
 		cache.IncrUserScore(roundId, userId, float64(score)-currentScore)
-
 		// 分数变化，广播排名更新
 		go h.broadcastRankingUpdate(roundInfo.ActivityId, roundId, roundInfo.WinnerCount)
 	}

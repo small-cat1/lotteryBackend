@@ -16,19 +16,31 @@ type RankingItem struct {
 }
 
 // IncrUserScore 增加用户积分
+// IncrUserScore 增加用户积分
 func IncrUserScore(roundId uint, userId uint, score float64) (float64, error) {
 	ctx := context.Background()
 	key := GetRoundScoresKey(roundId)
 
-	newScore, err := global.GVA_REDIS.ZIncrBy(ctx, key, score, fmt.Sprintf("%d", userId)).Result()
+	// 使用 Lua 脚本原子操作：增加分数 + 仅首次设置过期时间
+	script := redis.NewScript(`
+      local score = redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])
+      if redis.call('TTL', KEYS[1]) == -1 then
+         redis.call('EXPIRE', KEYS[1], ARGV[3])
+      end
+      return score
+   `)
+
+	result, err := script.Run(ctx, global.GVA_REDIS, []string{key},
+		score,
+		fmt.Sprintf("%d", userId),
+		int(RoundScoresExpire.Seconds()),
+	).Float64()
+
 	if err != nil {
 		return 0, err
 	}
 
-	// 设置过期时间
-	global.GVA_REDIS.Expire(ctx, key, RoundScoresExpire)
-
-	return newScore, nil
+	return result, nil
 }
 
 // GetUserScore 获取用户积分

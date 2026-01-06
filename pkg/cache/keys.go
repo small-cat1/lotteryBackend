@@ -37,7 +37,7 @@ const (
 	ActivityCacheExpire = 5 * time.Minute  // 活动缓存5分钟
 	SwitchExpire        = 24 * time.Hour   // 开关状态24小时
 	CheckInUsersExpire  = 24 * time.Hour   // 签到用户集合24小时
-	RoundScoresExpire   = 2 * time.Hour    // 场次积分2小时
+	RoundScoresExpire   = 24 * time.Hour   // 场次积分24小时
 	UserInfoExpire      = 30 * time.Minute // 用户信息缓存30分钟
 )
 
