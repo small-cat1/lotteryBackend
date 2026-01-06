@@ -59,6 +59,19 @@ func (t *EventTrigger) TriggerRankingUpdate(activityId, roundId uint, ranking []
 	t.broadcaster.BroadcastRankingUpdate(activityId, payload)
 }
 
+// TriggerGameStart 触发游戏开始事件
+// 在 StartGame 成功后调用
+func (t *EventTrigger) TriggerGameStart(activityId uint, payload GameStartPayload) {
+	t.broadcaster.BroadcastGameStart(activityId, payload)
+}
+
+// TriggerGameStop 触发游戏结束事件
+func (t *EventTrigger) TriggerGameStop(activityId uint, roundId uint) {
+	t.broadcaster.BroadcastGameStop(activityId, GameStopPayload{
+		RoundId: roundId,
+	})
+}
+
 // ==================== 用户通知 ====================
 
 // NotifyUser 发送消息给指定用户

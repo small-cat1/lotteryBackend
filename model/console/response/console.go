@@ -164,10 +164,11 @@ type WinnerItem struct {
 }
 
 type CurrentGameResp struct {
-	Round     *RoundInfo    `json:"round"`     // 当前场次信息，nil表示无进行中游戏
-	Status    int           `json:"status"`    // 状态 0待开始 1进行中 2已结束
-	Remaining int           `json:"remaining"` // 剩余时间（秒）
-	Ranking   []RankingItem `json:"ranking"`   // 当前排行榜
+	Round       *RoundInfo    `json:"round"`       // 当前场次信息，nil表示无进行中游戏
+	Status      int           `json:"status"`      // 状态 0待开始 1进行中 2已结束
+	Ranking     []RankingItem `json:"ranking"`     // 当前排行榜
+	EndTime     int64         `json:"endTime"`     // 结束时间戳（毫秒）
+	PlayerCount int           `json:"playerCount"` // 参与人数
 }
 
 // RoundInfo 场次信息

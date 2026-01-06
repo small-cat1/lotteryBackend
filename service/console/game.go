@@ -9,6 +9,7 @@ import (
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
 	"lotteryBackend/pkg/cache"
+	"lotteryBackend/ws"
 	"time"
 )
 
@@ -22,44 +23,80 @@ const (
 )
 
 // StartGame 开始游戏（验证密码）
-func (s *GameService) StartGame(roundId uint, password string) error {
+// StartGame 开始游戏（验证密码）
+// 修改：返回 endTime
+func (s *GameService) StartGame(roundId uint, password string) (int64, error) {
 	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return errors.New("场次不存在")
+	if err := global.GVA_DB.Preload("Prize").First(&round, roundId).Error; err != nil {
+		return 0, errors.New("场次不存在")
 	}
 
 	// 验证密码
 	if round.Password != password {
-		return errors.New("密码错误")
+		return 0, errors.New("密码错误")
 	}
+
 	// 检查是否有进行中的游戏
 	currentRoundId, err := cache.GetCurrentRound(round.ActivityId)
 	if err == nil && currentRoundId > 0 {
-		return errors.New("当前有进行中的游戏，请先结束后再开始")
+		return 0, errors.New("当前有进行中的游戏，请先结束后再开始")
 	}
-	// 更新数据库状态
+
+	// 计算时间
 	now := time.Now()
+	duration := round.Duration
+	if duration <= 0 {
+		duration = 60
+	}
+	endTime := now.Add(time.Duration(duration) * time.Second)
+	endTimeMs := endTime.UnixMilli()
+
+	// 更新数据库状态
 	global.GVA_DB.Model(&round).Updates(map[string]interface{}{
 		"status":     RoundStatusPlaying,
 		"start_time": now,
 	})
 
-	// 设置Redis（TTL=游戏时长）
-	duration := round.Duration
-	if duration <= 0 {
-		duration = 60 // 默认1分钟
-	}
+	// 设置Redis
 	cache.SetCurrentRound(round.ActivityId, roundId, duration)
 	cache.SetRoundStatus(roundId, RoundStatusPlaying)
 
-	return nil
+	// ⭐ 广播游戏开始
+	gameStartPayload := ws.GameStartPayload{
+		RoundId:  roundId,
+		Duration: duration,
+		EndTime:  endTimeMs,
+		Round: ws.RoundInfo{
+			ID:          round.ID,
+			RoundName:   round.RoundName,
+			Duration:    round.Duration,
+			WinnerCount: round.WinnerCount,
+			Status:      RoundStatusPlaying,
+		},
+	}
+
+	if round.Prize.ID > 0 {
+		gameStartPayload.Round.Prize = ws.PrizeBrief{
+			ID:    round.Prize.ID,
+			Name:  round.Prize.Name,
+			Image: round.Prize.Image,
+			Level: safeInt(round.Prize.Level),
+		}
+	}
+
+	ws.GetEventTrigger().TriggerGameStart(round.ActivityId, gameStartPayload)
+
+	return endTimeMs, nil
 }
 
 // GetCurrent 获取当前进行中的游戏
+// GetCurrent 获取当前进行中的游戏
+// 修改：返回 endTime，移除 remaining
 func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, error) {
 	resp := &response.CurrentGameResp{
 		Round:   nil,
 		Status:  0,
+		EndTime: 0,
 		Ranking: []response.RankingItem{},
 	}
 
@@ -92,10 +129,18 @@ func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, er
 		}
 	}
 
-	// 获取剩余时间（直接用TTL）
-	remaining, _ := cache.GetCurrentRoundRemaining(activityId)
-	resp.Remaining = remaining
 	resp.Status = RoundStatusPlaying
+
+	// ⭐ 计算 endTime（从数据库的 start_time + duration）
+	if round.StartTime != nil {
+		endTime := round.StartTime.Add(time.Duration(round.Duration) * time.Second)
+		resp.EndTime = endTime.UnixMilli()
+	}
+
+	// 获取参与人数
+	playerCount, _ := cache.GetPlayerCount(currentRoundId)
+	resp.PlayerCount = int(playerCount)
+
 	// 获取排行榜
 	ranking, _ := cache.GetRanking(currentRoundId, 20)
 	if len(ranking) > 0 {
@@ -142,6 +187,8 @@ func (s *GameService) StopGame(roundId uint) (*response.DrawResultResp, error) {
 	// 第一步：先关闭 Redis 游戏状态
 	cache.ClearCurrentRound(round.ActivityId)
 	cache.SetRoundStatus(roundId, RoundStatusFinished)
+	// ⭐ 广播游戏结束
+	ws.GetEventTrigger().TriggerGameStop(round.ActivityId, roundId)
 
 	result, err := s.settleGame(roundId)
 	if err != nil {

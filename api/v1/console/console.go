@@ -93,12 +93,14 @@ func (a *ConsoleApi) StartGame(c *gin.Context) {
 		return
 	}
 
-	err := gameService.StartGame(req.RoundId, req.Password)
+	endTime, err := gameService.StartGame(req.RoundId, req.Password)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	response.OkWithMessage("游戏已开始", c)
+	response.OkWithData(gin.H{
+		"endTime": endTime,
+	}, c)
 }
 
 // StopGame 立即停止游戏

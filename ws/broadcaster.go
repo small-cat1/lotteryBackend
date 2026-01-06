@@ -54,6 +54,26 @@ func (b *Broadcaster) BroadcastRankingUpdate(activityId uint, payload RankingUpd
 	b.hub.BroadcastToRoom(screenRoomID, TypeRankingUpdate, payload)
 }
 
+// BroadcastGameStart 广播游戏开始
+func (b *Broadcaster) BroadcastGameStart(activityId uint, payload GameStartPayload) {
+	// 广播到摇一摇房间（所有参与用户）
+	shakeRoomID := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
+	b.hub.BroadcastToRoom(shakeRoomID, TypeGameStart, payload)
+
+	// 广播到大屏房间（主持人）
+	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
+	b.hub.BroadcastToRoom(screenRoomID, TypeGameStart, payload)
+}
+
+// BroadcastGameStop 广播游戏结束
+func (b *Broadcaster) BroadcastGameStop(activityId uint, payload GameStopPayload) {
+	shakeRoomID := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
+	b.hub.BroadcastToRoom(shakeRoomID, TypeGameStop, payload)
+
+	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
+	b.hub.BroadcastToRoom(screenRoomID, TypeGameStop, payload)
+}
+
 // ==================== 用户消息 ====================
 
 // SendToUser 发送消息给指定用户

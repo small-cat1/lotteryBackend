@@ -78,9 +78,9 @@ type ShakeRoundResp struct {
 	WinnerCount int           `json:"winnerCount"` // 获奖人数
 	Status      int           `json:"status"`      // 0未开始 1进行中 2已结束
 	Prize       *H5PrizeBrief `json:"prize"`       // 关联奖品
-	RemainTime  int           `json:"remainTime"`  // 剩余时间
 	StartTime   *time.Time    `json:"startTime"`
 	EndTime     *time.Time    `json:"endTime"`
+	EndTimeMs   int64         `json:"endTimeMs"` // 结束时间戳（毫秒）
 }
 
 // ShakeRankingResp 摇一摇排名响应

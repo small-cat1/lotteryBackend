@@ -184,13 +184,10 @@ func (s *H5ShakeService) toRoundResp(round *annual.AnnualShakeRound) *response.S
 		EndTime:     round.EndTime,
 	}
 
-	// 计算剩余时间
+	// ⭐ 计算 EndTimeMs（游戏进行中时）
 	if *round.Status == 1 && round.StartTime != nil {
-		elapsed := int(time.Since(*round.StartTime).Seconds())
-		resp.RemainTime = round.Duration - elapsed
-		if resp.RemainTime < 0 {
-			resp.RemainTime = 0
-		}
+		endTime := round.StartTime.Add(time.Duration(round.Duration) * time.Second)
+		resp.EndTimeMs = endTime.UnixMilli()
 	}
 
 	// 获取关联奖品

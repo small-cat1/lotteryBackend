@@ -128,6 +128,20 @@ type ShakeScorePayload struct {
 	Score   int  `json:"score"`
 }
 
+// GameStartPayload 游戏开始消息
+type GameStartPayload struct {
+	RoundId   uint      `json:"roundId"`
+	Round     RoundInfo `json:"round"`
+	Duration  int       `json:"duration"`  // 游戏时长（秒）
+	EndTime   int64     `json:"endTime"`   // 游戏结束时间戳（毫秒）
+	StartTime int64     `json:"startTime"` // 游戏开始时间戳（毫秒）
+}
+
+// GameStopPayload 游戏结束消息
+type GameStopPayload struct {
+	RoundId uint `json:"roundId"`
+}
+
 // ==================== 消息类型常量 ====================
 
 const (
@@ -143,6 +157,10 @@ const (
 	// 摇一摇消息
 	TypeShakeScore    = "shake_score"    // 用户上报分数
 	TypeRankingUpdate = "ranking_update" // 排名更新广播
+
+	// 游戏控制消息
+	TypeGameStart = "game_start" // 游戏开始广播
+	TypeGameStop  = "game_stop"  // 游戏结束广播
 )
 
 // ==================== 房间类型常量 ====================
