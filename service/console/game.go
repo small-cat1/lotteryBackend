@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
@@ -129,18 +130,35 @@ func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, er
 
 // StopGame 停止游戏
 func (s *GameService) StopGame(roundId uint) (*response.DrawResultResp, error) {
+	global.GVA_LOG.Info("StopGame 开始", zap.Uint("roundId", roundId))
+
 	var round annual.AnnualShakeRound
 	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
+		global.GVA_LOG.Error("StopGame 场次不存在", zap.Uint("roundId", roundId), zap.Error(err))
 		return nil, errors.New("场次不存在")
 	}
 
+	global.GVA_LOG.Info("StopGame 查询到场次", zap.Uint("roundId", roundId), zap.Any("status", round.Status))
+
 	if safeInt(round.Status) != RoundStatusPlaying {
+		global.GVA_LOG.Warn("StopGame 游戏未在进行中", zap.Uint("roundId", roundId), zap.Any("status", round.Status))
 		return nil, errors.New("游戏未在进行中")
 	}
-	// ✅ 第一步：先关闭 Redis 游戏状态，阻止用户继续上分
+
+	// 第一步：先关闭 Redis 游戏状态
+	global.GVA_LOG.Info("StopGame 清除Redis缓存", zap.Uint("activityId", round.ActivityId), zap.Uint("roundId", roundId))
 	cache.ClearCurrentRound(round.ActivityId)
 	cache.SetRoundStatus(roundId, RoundStatusFinished)
-	return s.settleGame(roundId)
+
+	global.GVA_LOG.Info("StopGame 开始结算", zap.Uint("roundId", roundId))
+	result, err := s.settleGame(roundId)
+	if err != nil {
+		global.GVA_LOG.Error("StopGame 结算失败", zap.Uint("roundId", roundId), zap.Error(err))
+		return nil, err
+	}
+
+	global.GVA_LOG.Info("StopGame 完成", zap.Uint("roundId", roundId), zap.Int("winnersCount", len(result.Winners)))
+	return result, nil
 }
 
 // GetRanking 获取排行榜
@@ -242,19 +260,29 @@ func (s *GameService) GetWinners(roundId uint) (*response.WinnerListResp, error)
 }
 
 // settleGame 结算游戏
+// settleGame 结算游戏
 func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error) {
+	global.GVA_LOG.Info("settleGame 开始", zap.Uint("roundId", roundId))
+
 	var round annual.AnnualShakeRound
 	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
+		global.GVA_LOG.Error("settleGame 场次不存在", zap.Uint("roundId", roundId), zap.Error(err))
 		return nil, errors.New("场次不存在")
 	}
+
+	global.GVA_LOG.Info("settleGame 查询到场次", zap.Uint("roundId", roundId), zap.Uint("prizeId", round.PrizeId))
 
 	// 从Redis获取排行榜
 	ranking, err := cache.GetRanking(roundId, 0)
 	if err != nil {
+		global.GVA_LOG.Error("settleGame 获取排行榜失败", zap.Uint("roundId", roundId), zap.Error(err))
 		return nil, err
 	}
 
+	global.GVA_LOG.Info("settleGame 排行榜数据", zap.Uint("roundId", roundId), zap.Int("rankingCount", len(ranking)))
+
 	if len(ranking) == 0 {
+		global.GVA_LOG.Warn("settleGame 无参与者", zap.Uint("roundId", roundId))
 		return &response.DrawResultResp{
 			Winners: []response.WinnerItem{},
 			Prize:   nil,
@@ -264,8 +292,11 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 	// 获取奖品信息
 	var prize annual.AnnualPrize
 	if err := global.GVA_DB.First(&prize, round.PrizeId).Error; err != nil {
+		global.GVA_LOG.Error("settleGame 奖品不存在", zap.Uint("prizeId", round.PrizeId), zap.Error(err))
 		return nil, errors.New("奖品不存在")
 	}
+
+	global.GVA_LOG.Info("settleGame 查询到奖品", zap.Uint("prizeId", prize.ID), zap.String("prizeName", prize.Name))
 
 	prizeInfo := &response.PrizeItem{
 		ID:    prize.ID,
@@ -282,10 +313,13 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 
 	var users []annual.AnnualUser
 	if err := global.GVA_DB.Where("id IN ?", userIds).Find(&users).Error; err != nil {
+		global.GVA_LOG.Error("settleGame 获取用户信息失败", zap.Error(err))
 		return nil, errors.New("获取用户信息失败")
 	}
 
-	// 构建用户Map，方便快速查找
+	global.GVA_LOG.Info("settleGame 查询到用户", zap.Int("userCount", len(users)))
+
+	// 构建用户Map
 	userMap := make(map[uint]annual.AnnualUser, len(users))
 	for _, user := range users {
 		userMap[user.ID] = user
@@ -300,7 +334,6 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 	for _, r := range ranking {
 		isWinner := r.Rank <= round.WinnerCount
 
-		// 准备成绩数据
 		scores = append(scores, annual.AnnualShakeScore{
 			ActivityId: round.ActivityId,
 			RoundId:    roundId,
@@ -310,7 +343,6 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 			IsWinner:   boolToIntPtr(isWinner),
 		})
 
-		// 中奖处理
 		if isWinner {
 			winnersData = append(winnersData, annual.AnnualWinner{
 				ActivityId: round.ActivityId,
@@ -338,47 +370,58 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 		}
 	}
 
+	global.GVA_LOG.Info("settleGame 准备写入数据",
+		zap.Int("scoresCount", len(scores)),
+		zap.Int("winnersCount", len(winnersData)))
+
 	// 使用事务批量写入
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
-		// 批量插入成绩
 		if len(scores) > 0 {
 			if err := tx.CreateInBatches(&scores, 100).Error; err != nil {
+				global.GVA_LOG.Error("settleGame 保存成绩失败", zap.Error(err))
 				return fmt.Errorf("保存成绩失败: %w", err)
 			}
+			global.GVA_LOG.Info("settleGame 成绩保存成功", zap.Int("count", len(scores)))
 		}
 
-		// 批量插入中奖记录
 		if len(winnersData) > 0 {
 			if err := tx.CreateInBatches(&winnersData, 100).Error; err != nil {
+				global.GVA_LOG.Error("settleGame 保存中奖记录失败", zap.Error(err))
 				return fmt.Errorf("保存中奖记录失败: %w", err)
 			}
+			global.GVA_LOG.Info("settleGame 中奖记录保存成功", zap.Int("count", len(winnersData)))
 
-			// 更新奖品剩余数量
 			if err := tx.Model(&prize).Update("remain_count", gorm.Expr("remain_count - ?", len(winnersData))).Error; err != nil {
+				global.GVA_LOG.Error("settleGame 更新奖品数量失败", zap.Error(err))
 				return fmt.Errorf("更新奖品数量失败: %w", err)
 			}
+			global.GVA_LOG.Info("settleGame 奖品数量更新成功")
 		}
 
-		// 更新场次状态
 		if err := tx.Model(&round).Updates(map[string]interface{}{
 			"status":   RoundStatusFinished,
 			"end_time": time.Now(),
 		}).Error; err != nil {
+			global.GVA_LOG.Error("settleGame 更新场次状态失败", zap.Error(err))
 			return fmt.Errorf("更新场次状态失败: %w", err)
 		}
+		global.GVA_LOG.Info("settleGame 场次状态更新成功", zap.Uint("roundId", roundId))
 
 		return nil
 	})
 
 	if err != nil {
+		global.GVA_LOG.Error("settleGame 事务失败", zap.Uint("roundId", roundId), zap.Error(err))
 		return nil, err
 	}
 
-	// 回填中奖记录ID（如果需要的话）
+	// 回填中奖记录ID
 	for i, w := range winnersData {
 		winners[i].ID = w.ID
 		winners[i].CreatedAt = w.CreatedAt
 	}
+
+	global.GVA_LOG.Info("settleGame 完成", zap.Uint("roundId", roundId), zap.Int("winnersCount", len(winners)))
 
 	return &response.DrawResultResp{
 		Winners: winners,
