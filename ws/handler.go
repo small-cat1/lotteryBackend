@@ -102,15 +102,22 @@ func (h *Handler) HandleScreenConnection(c *gin.Context) {
 	// 根据类型加入对应房间
 	screenType := c.Query("type")
 	activityId := c.Query("activityId")
+	// ⭐ 调试日志
+	global.GVA_LOG.Info("主持人端连接",
+		zap.String("clientId", clientID),
+		zap.String("screenType", screenType),
+		zap.String("activityId", activityId))
 
 	// 加入通用大屏房间
 	roomID := RoomTypeScreen + ":" + activityId
 	client.JoinRoom(roomID)
+	global.GVA_LOG.Info("主持人加入房间", zap.String("roomId", roomID))
 
 	// 加入具体类型房间
 	if screenType != "" {
 		typeRoomID := screenType + ":" + activityId
 		client.JoinRoom(typeRoomID)
+		global.GVA_LOG.Info("主持人加入类型房间", zap.String("roomId", typeRoomID))
 	}
 
 	client.SendMessage(TypeConnected, ConnectedPayload{
