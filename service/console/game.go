@@ -23,8 +23,6 @@ const (
 )
 
 // StartGame 开始游戏（验证密码）
-// StartGame 开始游戏（验证密码）
-// 修改：返回 endTime
 func (s *GameService) StartGame(roundId uint, password string) (int64, error) {
 	var round annual.AnnualShakeRound
 	if err := global.GVA_DB.Preload("Prize").First(&round, roundId).Error; err != nil {
@@ -36,29 +34,35 @@ func (s *GameService) StartGame(roundId uint, password string) (int64, error) {
 		return 0, errors.New("密码错误")
 	}
 
-	// 检查是否有进行中的游戏
-	currentRoundId, err := cache.GetCurrentRound(round.ActivityId)
-	if err == nil && currentRoundId > 0 {
-		return 0, errors.New("当前有进行中的游戏，请先结束后再开始")
+	// 检查该场次是否已结束（防止重复开始已结算的场次）
+	if safeInt(round.Status) == RoundStatusFinished {
+		return 0, errors.New("该场次已结束，无法重新开始")
 	}
 
-	// 计算时间
-	now := time.Now()
+	// 检查是否有进行中的游戏（原子操作）
 	duration := round.Duration
 	if duration <= 0 {
 		duration = 60
 	}
+
+	// ⭐ 第一步：清除该场次的旧缓存数据（防止脏数据）
+	cache.ClearRoundAll(roundId)
+
+	// ⭐ 第二步：原子设置当前场次（防止并发开启多个游戏）
+	set, err := cache.SetCurrentRoundNX(round.ActivityId, roundId, duration)
+	if err != nil {
+		return 0, errors.New("系统错误，请重试")
+	}
+	if !set {
+		return 0, errors.New("当前有进行中的游戏，请先结束后再开始")
+	}
+
+	// 计算结束时间
+	now := time.Now()
 	endTime := now.Add(time.Duration(duration) * time.Second)
 	endTimeMs := endTime.UnixMilli()
 
-	// 更新数据库状态
-	global.GVA_DB.Model(&round).Updates(map[string]interface{}{
-		"status":     RoundStatusPlaying,
-		"start_time": now,
-	})
-
-	// 设置Redis
-	cache.SetCurrentRound(round.ActivityId, roundId, duration)
+	// ⭐ 第三步：设置场次缓存
 	cache.SetRoundStatus(roundId, RoundStatusPlaying)
 	cache.SetRoundInfo(roundId, &cache.RoundInfoCache{
 		ID:          round.ID,
@@ -66,7 +70,19 @@ func (s *GameService) StartGame(roundId uint, password string) (int64, error) {
 		WinnerCount: round.WinnerCount,
 		Duration:    round.Duration,
 	})
-	// ⭐ 广播游戏开始
+
+	// 第四步：更新数据库状态
+	if err := global.GVA_DB.Model(&round).Updates(map[string]interface{}{
+		"status":     RoundStatusPlaying,
+		"start_time": now,
+	}).Error; err != nil {
+		// 数据库更新失败，回滚 Redis
+		cache.ClearCurrentRound(round.ActivityId)
+		cache.ClearRoundAll(roundId)
+		return 0, errors.New("更新场次状态失败")
+	}
+
+	// 第五步：广播游戏开始
 	gameStartPayload := ws.GameStartPayload{
 		RoundId:  roundId,
 		Duration: duration,
@@ -91,12 +107,16 @@ func (s *GameService) StartGame(roundId uint, password string) (int64, error) {
 
 	ws.GetEventTrigger().TriggerGameStart(round.ActivityId, gameStartPayload)
 
+	global.GVA_LOG.Info("游戏开始",
+		zap.Uint("roundId", roundId),
+		zap.Uint("activityId", round.ActivityId),
+		zap.Int("duration", duration),
+		zap.Int64("endTime", endTimeMs))
+
 	return endTimeMs, nil
 }
 
 // GetCurrent 获取当前进行中的游戏
-// GetCurrent 获取当前进行中的游戏
-// 修改：返回 endTime，移除 remaining
 func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, error) {
 	resp := &response.CurrentGameResp{
 		Round:   nil,

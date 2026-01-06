@@ -51,6 +51,7 @@ func GetUserInfoCache(userId uint) (*UserInfoCache, error) {
 }
 
 // BatchGetUserInfoCache 批量获取用户信息缓存
+// 返回：已缓存的用户Map, 未命中的用户ID列表, 错误
 func BatchGetUserInfoCache(userIds []uint) (map[uint]*UserInfoCache, []uint, error) {
 	ctx := context.Background()
 	result := make(map[uint]*UserInfoCache)
@@ -95,6 +96,10 @@ func BatchGetUserInfoCache(userIds []uint) (map[uint]*UserInfoCache, []uint, err
 
 // BatchSetUserInfoCache 批量设置用户信息缓存
 func BatchSetUserInfoCache(users map[uint]*UserInfoCache) error {
+	if len(users) == 0 {
+		return nil
+	}
+
 	ctx := context.Background()
 	pipe := global.GVA_REDIS.Pipeline()
 

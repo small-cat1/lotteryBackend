@@ -2,11 +2,12 @@ package cache
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
 	"lotteryBackend/global"
+
+	"github.com/redis/go-redis/v9"
 )
 
-// ==================== 签到开关操作 ====================
+// ==================== 签到开关 ====================
 
 // GetCheckInSwitch 获取签到开关状态
 func GetCheckInSwitch(activityId uint) (bool, error) {
@@ -35,7 +36,7 @@ func SetCheckInSwitch(activityId uint, enabled bool) error {
 	return global.GVA_REDIS.Set(ctx, key, val, SwitchExpire).Err()
 }
 
-// ==================== 弹幕开关操作 ====================
+// ==================== 弹幕开关 ====================
 
 // GetDanmakuSwitch 获取弹幕开关状态
 func GetDanmakuSwitch(activityId uint) (bool, error) {
@@ -44,7 +45,7 @@ func GetDanmakuSwitch(activityId uint) (bool, error) {
 
 	val, err := global.GVA_REDIS.Get(ctx, key).Result()
 	if err == redis.Nil {
-		return false, nil
+		return false, nil // 默认关闭
 	}
 	if err != nil {
 		return false, err

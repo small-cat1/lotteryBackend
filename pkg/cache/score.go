@@ -15,20 +15,21 @@ type RankingItem struct {
 	Rank   int     `json:"rank"`
 }
 
+// ==================== 积分操作 ====================
+
 // IncrUserScore 增加用户积分
-// IncrUserScore 增加用户积分
+// 使用 Lua 脚本原子操作：增加分数 + 仅首次设置过期时间
 func IncrUserScore(roundId uint, userId uint, score float64) (float64, error) {
 	ctx := context.Background()
 	key := GetRoundScoresKey(roundId)
 
-	// 使用 Lua 脚本原子操作：增加分数 + 仅首次设置过期时间
 	script := redis.NewScript(`
-      local score = redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])
-      if redis.call('TTL', KEYS[1]) == -1 then
-         redis.call('EXPIRE', KEYS[1], ARGV[3])
-      end
-      return score
-   `)
+		local score = redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])
+		if redis.call('TTL', KEYS[1]) == -1 then
+			redis.call('EXPIRE', KEYS[1], ARGV[3])
+		end
+		return score
+	`)
 
 	result, err := script.Run(ctx, global.GVA_REDIS, []string{key},
 		score,
@@ -43,6 +44,25 @@ func IncrUserScore(roundId uint, userId uint, score float64) (float64, error) {
 	return result, nil
 }
 
+// SetUserScore 直接设置用户积分（覆盖）
+func SetUserScore(roundId uint, userId uint, score float64) error {
+	ctx := context.Background()
+	key := GetRoundScoresKey(roundId)
+
+	_, err := global.GVA_REDIS.ZAdd(ctx, key, redis.Z{
+		Score:  score,
+		Member: fmt.Sprintf("%d", userId),
+	}).Result()
+
+	if err != nil {
+		return err
+	}
+
+	// 仅首次设置过期时间
+	global.GVA_REDIS.ExpireNX(ctx, key, RoundScoresExpire)
+	return nil
+}
+
 // GetUserScore 获取用户积分
 func GetUserScore(roundId uint, userId uint) (float64, error) {
 	ctx := context.Background()
@@ -55,24 +75,36 @@ func GetUserScore(roundId uint, userId uint) (float64, error) {
 	return score, err
 }
 
-// GetUserRank 获取用户排名（从0开始）
-func GetUserRank(roundId uint, userId uint) (int64, error) {
+// GetUserRank 获取用户排名（从1开始）
+// 返回 -1 表示不在排行榜中
+func GetUserRank(roundId uint, userId uint) (int, error) {
 	ctx := context.Background()
 	key := GetRoundScoresKey(roundId)
 
 	rank, err := global.GVA_REDIS.ZRevRank(ctx, key, fmt.Sprintf("%d", userId)).Result()
 	if err == redis.Nil {
-		return -1, nil // 不在排行榜中
+		return -1, nil
 	}
-	return rank, err
+	if err != nil {
+		return -1, err
+	}
+	return int(rank) + 1, nil // 转为从1开始
 }
 
+// ==================== 排行榜 ====================
+
 // GetRanking 获取排行榜
+// limit <= 0 表示获取全部
 func GetRanking(roundId uint, limit int64) ([]RankingItem, error) {
 	ctx := context.Background()
 	key := GetRoundScoresKey(roundId)
 
-	results, err := global.GVA_REDIS.ZRevRangeWithScores(ctx, key, 0, limit-1).Result()
+	var end int64 = -1
+	if limit > 0 {
+		end = limit - 1
+	}
+
+	results, err := global.GVA_REDIS.ZRevRangeWithScores(ctx, key, 0, end).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +123,13 @@ func GetRanking(roundId uint, limit int64) ([]RankingItem, error) {
 	return ranking, nil
 }
 
+// GetTopN 获取前N名
+func GetTopN(roundId uint, n int) ([]RankingItem, error) {
+	return GetRanking(roundId, int64(n))
+}
+
+// ==================== 统计 ====================
+
 // GetPlayerCount 获取参与人数
 func GetPlayerCount(roundId uint) (int64, error) {
 	ctx := context.Background()
@@ -98,9 +137,18 @@ func GetPlayerCount(roundId uint) (int64, error) {
 	return global.GVA_REDIS.ZCard(ctx, key).Result()
 }
 
+// ==================== 清理 ====================
+
 // ClearRoundScores 清除场次积分
 func ClearRoundScores(roundId uint) error {
 	ctx := context.Background()
 	key := GetRoundScoresKey(roundId)
 	return global.GVA_REDIS.Del(ctx, key).Err()
+}
+
+// RemoveUserScore 移除用户积分
+func RemoveUserScore(roundId uint, userId uint) error {
+	ctx := context.Background()
+	key := GetRoundScoresKey(roundId)
+	return global.GVA_REDIS.ZRem(ctx, key, fmt.Sprintf("%d", userId)).Err()
 }
