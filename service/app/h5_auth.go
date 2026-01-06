@@ -101,13 +101,13 @@ func (s *H5AuthService) WechatLogin(code string, activityId uint) (*response.Wec
 		if err := global.GVA_DB.Where("user_id = ? AND activity_id = ?", user.ID, activityId).First(&checkInRecord).Error; err == nil {
 			checkIn = &response.H5CheckInInfo{
 				IsCheckedIn:  true,
-				RealName:     checkIn.RealName,
-				Phone:        checkIn.Phone,
-				Department:   checkIn.Department,
-				EmployeeNo:   checkIn.EmployeeNo,
-				Status:       checkIn.Status,
+				RealName:     checkInRecord.RealName,
+				Phone:        checkInRecord.Phone,
+				Department:   checkInRecord.Department,
+				EmployeeNo:   checkInRecord.EmployeeNo,
+				Status:       checkInRecord.Status,
 				RejectReason: "",
-				CheckInTime:  checkIn.CheckInTime,
+				CheckInTime:  checkInRecord.CheckInTime,
 			}
 		}
 	}
