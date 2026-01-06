@@ -69,6 +69,10 @@ func (h *ShakeHandler) HandleShakeScore(client *Client, payload string) {
 		go cache.SetRoundInfo(roundId, roundInfo)
 	}
 
+	// 获取场次信息后，添加：
+	if !cache.IsUserEligible(roundInfo.ActivityId, userId) {
+		return // 无资格，静默忽略
+	}
 	// 更新 Redis 中的分数（使用 ZSet，只保留最高分）
 	currentScore, _ := cache.GetUserScore(roundId, userId)
 	if float64(score) > currentScore {

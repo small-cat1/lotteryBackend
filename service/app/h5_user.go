@@ -95,6 +95,14 @@ func (s *H5UserService) CheckIn(userId uint, req request.CheckInReq, ip string) 
 		return nil, errors.New("活动未开始或已结束")
 	}
 
+	currentRoundId, err := cache.GetCurrentRound(req.ActivityId)
+	if err == nil && currentRoundId > 0 {
+		// 有进行中的游戏
+		status, _ := cache.GetRoundStatus(currentRoundId)
+		if status == 1 { // 1 = 进行中
+			return nil, errors.New("游戏进行中，暂停签到")
+		}
+	}
 	// 检查是否已签到该活动
 	var existCheckIn annual.AnnualCheckIn
 	result := global.GVA_DB.Where("activity_id = ? AND user_id = ?", req.ActivityId, userId).First(&existCheckIn)
@@ -113,9 +121,11 @@ func (s *H5UserService) CheckIn(userId uint, req request.CheckInReq, ip string) 
 	needAudit := s.getNeedAuditConfig()
 	global.GVA_LOG.Info("是否需要审核", zap.Any("needAudit", needAudit))
 	status := 0 // 默认待审核
-	// 不需要审核时，直接广播签到统计
 	if !needAudit {
 		status = 1
+		// 不需要审核时，直接广播签到统计
+		common.BroadcastCheckInStats(req.ActivityId)
+		cache.SetUserEligible(req.ActivityId, userId) // ⭐ 新增
 		common.BroadcastCheckInStats(req.ActivityId)
 	}
 

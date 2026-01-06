@@ -5,6 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	annualReq "lotteryBackend/model/annual/request"
+	"lotteryBackend/pkg/cache"
 	"lotteryBackend/service/common"
 )
 
@@ -103,22 +104,29 @@ func (s *AnnualCheckInService) UpdateCheckInStatus(req annualReq.CheckInStatusUp
 
 	var err error
 	var activityId uint
+	var userIds []uint // ⭐ 新增：记录被审核的用户ID
 
 	// 批量审核
 	if len(req.Ids) > 0 {
-		// 先获取 activityId
-		var checkIn annual.AnnualCheckIn
-		global.GVA_DB.Select("activity_id").First(&checkIn, req.Ids[0])
-		activityId = checkIn.ActivityId
+		// 先获取 activityId 和 userIds
+		var checkIns []annual.AnnualCheckIn
+		global.GVA_DB.Select("activity_id, user_id").Where("id IN ?", req.Ids).Find(&checkIns)
+		if len(checkIns) > 0 {
+			activityId = checkIns[0].ActivityId
+			for _, c := range checkIns {
+				userIds = append(userIds, c.UserId)
+			}
+		}
 
 		err = global.GVA_DB.Model(&annual.AnnualCheckIn{}).
 			Where("id IN ? AND status = 0", req.Ids).
 			Updates(updates).Error
 	} else if req.Id > 0 {
-		// 单个审核 - 先获取 activityId
+		// 单个审核 - 先获取 activityId 和 userId
 		var checkIn annual.AnnualCheckIn
-		global.GVA_DB.Select("activity_id").First(&checkIn, req.Id)
+		global.GVA_DB.Select("activity_id, user_id").First(&checkIn, req.Id)
 		activityId = checkIn.ActivityId
+		userIds = append(userIds, checkIn.UserId)
 
 		err = global.GVA_DB.Model(&annual.AnnualCheckIn{}).
 			Where("id = ? AND status = 0", req.Id).
@@ -129,6 +137,19 @@ func (s *AnnualCheckInService) UpdateCheckInStatus(req annualReq.CheckInStatusUp
 
 	if err != nil {
 		return err
+	}
+
+	// ⭐ 新增：更新资格缓存
+	if activityId > 0 && len(userIds) > 0 {
+		for _, userId := range userIds {
+			if req.Status == 1 {
+				// 审核通过，添加资格
+				cache.SetUserEligible(activityId, userId)
+			} else if req.Status == 2 {
+				// 审核拒绝，移除资格
+				cache.RemoveUserEligible(activityId, userId)
+			}
+		}
 	}
 
 	// 审核成功后广播统计
