@@ -421,9 +421,18 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 				return fmt.Errorf("保存中奖记录失败: %w", err)
 			}
 
-			if err := tx.Model(&prize).Update("remain_count", gorm.Expr("remain_count - ?", len(winnersData))).Error; err != nil {
-				global.GVA_LOG.Error("settleGame 更新奖品数量失败", zap.Error(err))
-				return fmt.Errorf("更新奖品数量失败: %w", err)
+			result := tx.Model(&prize).
+				Where("remain_count >= ?", len(winnersData)).
+				Update("remain_count", gorm.Expr("remain_count - ?", len(winnersData)))
+
+			if result.Error != nil {
+				global.GVA_LOG.Error("settleGame 更新奖品数量失败", zap.Error(result.Error))
+				return fmt.Errorf("更新奖品数量失败: %w", result.Error)
+			}
+
+			// 如果没有更新到行，说明库存不足，但不影响结算
+			if result.RowsAffected == 0 {
+				global.GVA_LOG.Warn("settleGame 奖品库存不足，跳过扣减", zap.Uint("prizeId", prize.ID))
 			}
 		}
 
