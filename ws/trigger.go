@@ -47,17 +47,6 @@ func (t *EventTrigger) TriggerDanmaku(activityId uint, danmakuId uint, user User
 	t.broadcaster.BroadcastDanmaku(activityId, payload)
 }
 
-// TriggerTopDanmaku 触发置顶弹幕事件
-func (t *EventTrigger) TriggerTopDanmaku(activityId uint, danmakuId uint, user UserBrief, content, color string) {
-	payload := TopDanmakuPayload{
-		ID:      danmakuId,
-		User:    user,
-		Content: content,
-		Color:   color,
-	}
-	t.broadcaster.BroadcastTopDanmaku(activityId, payload)
-}
-
 // ==================== 摇一摇事件 ====================
 
 // TriggerRankingUpdate 触发排名更新

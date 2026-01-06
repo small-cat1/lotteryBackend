@@ -24,6 +24,7 @@ func Init() {
 	// 初始化事件触发器
 	GetEventTrigger()
 
+	GetShakeHandler() // 添加这行
 	global.GVA_LOG.Info("WebSocket 模块初始化完成")
 }
 

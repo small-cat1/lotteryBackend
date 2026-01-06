@@ -272,8 +272,10 @@ func (h *Hub) LeaveRoom(client *Client, roomID string) {
 
 // HandleClientMessage 处理客户端消息
 func (h *Hub) HandleClientMessage(client *Client, msg *ClientMessage) {
-	// 可以在这里添加业务逻辑处理
-	// 比如聊天消息转发等
+	switch msg.Type {
+	case TypeShakeScore:
+		GetShakeHandler().HandleShakeScore(client, msg.Payload)
+	}
 }
 
 // ==================== 对外广播方法 ====================

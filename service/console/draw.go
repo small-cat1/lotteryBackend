@@ -5,7 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
-	"lotteryBackend/service/common"
+	"lotteryBackend/pkg/cache"
 	"math/rand"
 	"time"
 )
@@ -22,7 +22,7 @@ const (
 // RandomDraw 随机抽奖（从已签到用户中抽取）
 func (s *DrawService) RandomDraw(activityId uint, count int, prizeId uint) (*response.DrawResultResp, error) {
 	// 获取已签到用户
-	userIdStrs, err := common.GetCheckInUserIds(activityId)
+	userIdStrs, err := cache.GetCheckInUserIds(activityId)
 	if err != nil || len(userIdStrs) == 0 {
 		// 降级查数据库
 		var userIds []uint

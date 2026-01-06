@@ -114,29 +114,6 @@ func (a *ConsoleApi) GetDanmakuList(c *gin.Context) {
 	response.OkWithData(result, c)
 }
 
-// AuditDanmaku 审核弹幕
-// @Tags Console-弹幕
-// @Summary 审核弹幕
-// @Accept application/json
-// @Produce application/json
-// @Param data body consoleReq.AuditDanmakuReq true "审核弹幕"
-// @Success 200 {object} response.Response
-// @Router /console/danmaku/audit [post]
-func (a *ConsoleApi) AuditDanmaku(c *gin.Context) {
-	var req consoleReq.AuditDanmakuReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage("参数错误", c)
-		return
-	}
-
-	err := danmakuService.AuditDanmaku(req.DanmakuId, req.Status)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithMessage("审核成功", c)
-}
-
 // ==================== 游戏控制 ====================
 
 // StartGame 开始游戏
@@ -220,28 +197,6 @@ func (a *ConsoleApi) GetGameStatus(c *gin.Context) {
 	roundId, _ := strconv.ParseUint(roundIdStr, 10, 64)
 
 	result, err := gameService.GetGameStatus(uint(roundId))
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithData(result, c)
-}
-
-// GetRanking 获取排行榜
-// @Tags Console-游戏
-// @Summary 获取排行榜
-// @Produce application/json
-// @Param roundId query int true "场次ID"
-// @Param limit query int false "数量限制"
-// @Success 200 {object} response.Response
-// @Router /console/game/ranking [get]
-func (a *ConsoleApi) GetRanking(c *gin.Context) {
-	roundIdStr := c.Query("roundId")
-	roundId, _ := strconv.ParseUint(roundIdStr, 10, 64)
-	limitStr := c.DefaultQuery("limit", "20")
-	limit, _ := strconv.Atoi(limitStr)
-
-	result, err := gameService.GetRanking(uint(roundId), limit)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return

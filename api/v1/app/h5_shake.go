@@ -88,60 +88,6 @@ func (a *H5ShakeApi) GetRoundDetail(c *gin.Context) {
 	response.OkWithData(result, c)
 }
 
-// JoinGame 加入游戏
-// @Tags H5-摇一摇
-// @Summary 加入游戏
-// @Security ApiKeyAuth
-// @accept application/json
-// @Produce application/json
-// @Param data body request.JoinGameReq true "场次ID"
-// @Success 200 {object} response.Response
-// @Router /h5/shake/join [post]
-func (a *H5ShakeApi) JoinGame(c *gin.Context) {
-	var req request.JoinGameReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage("参数错误", c)
-		return
-	}
-
-	userId := c.GetUint("h5UserId")
-
-	err := h5ShakeService.JoinGame(userId, req.RoundId)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-
-	response.OkWithMessage("加入成功", c)
-}
-
-// SubmitScore 提交分数
-// @Tags H5-摇一摇
-// @Summary 提交分数
-// @Security ApiKeyAuth
-// @accept application/json
-// @Produce application/json
-// @Param data body request.SubmitScoreReq true "分数信息"
-// @Success 200 {object} response.Response{data=appResp.MyScoreResp}
-// @Router /h5/shake/score [post]
-func (a *H5ShakeApi) SubmitScore(c *gin.Context) {
-	var req request.SubmitScoreReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage("参数错误", c)
-		return
-	}
-
-	userId := c.GetUint("h5UserId")
-
-	result, err := h5ShakeService.SubmitScore(userId, req.RoundId, req.Score)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-
-	response.OkWithData(result, c)
-}
-
 // GetShakeRanking 获取实时排名
 // @Tags H5-摇一摇
 // @Summary 获取实时排名

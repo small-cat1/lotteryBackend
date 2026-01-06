@@ -5,6 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/response"
+	"lotteryBackend/ws"
 	"sort"
 	"time"
 )
@@ -58,76 +59,6 @@ func (s *H5ShakeService) GetRoundDetail(roundId uint) (*response.ShakeRoundResp,
 	}
 
 	return s.toRoundResp(&round), nil
-}
-
-// JoinGame 加入游戏
-func (s *H5ShakeService) JoinGame(userId, roundId uint) error {
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return errors.New("场次不存在")
-	}
-
-	if *round.Status == 2 {
-		return errors.New("本场游戏已结束")
-	}
-
-	// 检查是否已经有成绩记录
-	var existScore annual.AnnualShakeScore
-	result := global.GVA_DB.Where("round_id = ? AND user_id = ?", roundId, userId).First(&existScore)
-
-	if result.RowsAffected == 0 {
-		// 创建成绩记录
-		score := annual.AnnualShakeScore{
-			RoundId: roundId,
-			UserId:  userId,
-			Score:   0,
-		}
-		global.GVA_DB.Create(&score)
-	}
-
-	return nil
-}
-
-// SubmitScore 提交分数
-func (s *H5ShakeService) SubmitScore(userId, roundId uint, score int) (*response.MyScoreResp, error) {
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return nil, errors.New("场次不存在")
-	}
-
-	if *round.Status != 1 {
-		return nil, errors.New("游戏未开始或已结束")
-	}
-
-	// 更新或创建成绩
-	var existScore annual.AnnualShakeScore
-	result := global.GVA_DB.Where("round_id = ? AND user_id = ?", roundId, userId).First(&existScore)
-
-	if result.RowsAffected == 0 {
-		// 创建
-		existScore = annual.AnnualShakeScore{
-			RoundId: roundId,
-			UserId:  userId,
-			Score:   score,
-		}
-		global.GVA_DB.Create(&existScore)
-	} else {
-		// 更新（只允许分数增加）
-		if score > existScore.Score {
-			global.GVA_DB.Model(&existScore).Update("score", score)
-			existScore.Score = score
-		}
-	}
-
-	// 计算排名
-	rank := s.calculateRank(roundId, userId)
-	isWinner := rank > 0 && rank <= round.WinnerCount
-
-	return &response.MyScoreResp{
-		Score:    existScore.Score,
-		Rank:     rank,
-		IsWinner: isWinner,
-	}, nil
 }
 
 // GetShakeRanking 获取实时排名
@@ -278,6 +209,39 @@ func (s *H5ShakeService) toRoundResp(round *annual.AnnualShakeRound) *response.S
 	}
 
 	return resp
+}
+
+// broadcastRankingUpdate 广播排名更新到主持人端
+func (s *H5ShakeService) broadcastRankingUpdate(activityId, roundId uint) {
+	// 获取前10名排名
+	ranking, err := s.GetShakeRanking(roundId, 10)
+	if err != nil {
+		return
+	}
+
+	// 转换为 WebSocket 消息格式
+	wsRanking := make([]ws.RankingItem, len(ranking))
+	for i, r := range ranking {
+		wsRanking[i] = ws.RankingItem{
+			Rank:   r.Rank,
+			UserId: r.UserId,
+			User: ws.UserBrief{
+				ID:         r.User.ID,
+				Nickname:   r.User.Nickname,
+				Avatar:     r.User.Avatar,
+				RealName:   r.User.RealName,
+				Department: r.User.Department,
+			},
+			Score:    r.Score,
+			IsWinner: r.IsWinner,
+		}
+	}
+
+	// 广播到主持人端
+	ws.GetBroadcaster().BroadcastRankingUpdate(activityId, ws.RankingUpdatePayload{
+		RoundId: roundId,
+		Ranking: wsRanking,
+	})
 }
 
 // SettleRound 结算场次（生成中奖记录）

@@ -1,11 +1,10 @@
 package console
 
 import (
-	"errors"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
-	"lotteryBackend/service/common"
+	"lotteryBackend/pkg/cache"
 )
 
 type DanmakuService struct{}
@@ -62,29 +61,19 @@ func (s *DanmakuService) GetDanmakuList(activityId uint, limit int, status int) 
 	}, nil
 }
 
-// AuditDanmaku 审核弹幕
-func (s *DanmakuService) AuditDanmaku(danmakuId uint, status int) error {
-	var danmaku annual.AnnualDanmaku
-	if err := global.GVA_DB.First(&danmaku, danmakuId).Error; err != nil {
-		return errors.New("弹幕不存在")
-	}
-
-	return global.GVA_DB.Model(&danmaku).Update("status", status).Error
-}
-
 // OpenDanmaku 开启弹幕
 func (s *DanmakuService) OpenDanmaku(activityId uint) error {
-	return common.SetDanmakuSwitch(activityId, true)
+	return cache.SetDanmakuSwitch(activityId, true)
 }
 
 // CloseDanmaku 关闭弹幕
 func (s *DanmakuService) CloseDanmaku(activityId uint) error {
-	return common.SetDanmakuSwitch(activityId, false)
+	return cache.SetDanmakuSwitch(activityId, false)
 }
 
 // IsDanmakuOpen 检查弹幕是否开启
 func (s *DanmakuService) IsDanmakuOpen(activityId uint) (bool, error) {
-	return common.GetDanmakuSwitch(activityId)
+	return cache.GetDanmakuSwitch(activityId)
 }
 
 // GetDanmakuUsers 获取发送弹幕的用户列表（用于弹幕抽奖）

@@ -5,7 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
-	"lotteryBackend/service/common"
+	"lotteryBackend/pkg/cache"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type CheckInService struct{}
 // GetCheckInStats 获取签到统计（包含开关状态和最新列表）
 func (s *CheckInService) GetCheckInStats(activityId uint, limit int) (*response.CheckInStatsResp, error) {
 	// 获取签到开关状态
-	isOpen, _ := common.GetCheckInSwitch(activityId)
+	isOpen, _ := cache.GetCheckInSwitch(activityId)
 
 	// 按状态统计
 	type StatusCount struct {
@@ -81,12 +81,12 @@ func (s *CheckInService) OpenCheckIn(activityId uint) error {
 	}
 
 	// 设置签到开关为开启
-	return common.SetCheckInSwitch(activityId, true)
+	return cache.SetCheckInSwitch(activityId, true)
 }
 
 // CloseCheckIn 关闭签到
 func (s *CheckInService) CloseCheckIn(activityId uint) error {
-	return common.SetCheckInSwitch(activityId, false)
+	return cache.SetCheckInSwitch(activityId, false)
 }
 
 // SyncCheckInUsersToRedis 同步签到用户到Redis（启动时或数据恢复用）
@@ -97,7 +97,7 @@ func (s *CheckInService) SyncCheckInUsersToRedis(activityId uint) error {
 		Pluck("user_id", &userIds)
 
 	for _, userId := range userIds {
-		common.AddCheckInUser(activityId, userId)
+		cache.AddCheckInUser(activityId, userId)
 	}
 
 	return nil
@@ -106,7 +106,7 @@ func (s *CheckInService) SyncCheckInUsersToRedis(activityId uint) error {
 // IsUserCheckedIn 检查用户是否已签到
 func (s *CheckInService) IsUserCheckedIn(activityId uint, userId uint) (bool, error) {
 	// 先查Redis
-	checked, err := common.IsUserCheckIn(activityId, userId)
+	checked, err := cache.IsUserCheckIn(activityId, userId)
 	if err == nil {
 		return checked, nil
 	}
@@ -122,7 +122,7 @@ func (s *CheckInService) IsUserCheckedIn(activityId uint, userId uint) (bool, er
 // DoCheckIn 执行签到（供H5端调用）
 func (s *CheckInService) DoCheckIn(activityId uint, userId uint, ip string) error {
 	// 检查签到是否开启
-	isOpen, _ := common.GetCheckInSwitch(activityId)
+	isOpen, _ := cache.GetCheckInSwitch(activityId)
 	if !isOpen {
 		return errors.New("签到未开启")
 	}
@@ -134,7 +134,7 @@ func (s *CheckInService) DoCheckIn(activityId uint, userId uint, ip string) erro
 	}
 
 	// 添加到Redis
-	added, err := common.AddCheckInUser(activityId, userId)
+	added, err := cache.AddCheckInUser(activityId, userId)
 	if err != nil {
 		return errors.New("签到失败")
 	}

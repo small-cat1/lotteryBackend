@@ -163,8 +163,6 @@ func (h *Handler) HandleH5Connection(c *gin.Context) {
 		client.JoinRoom(RoomTypeDanmaku + ":" + activityId)
 		// 加入摇一摇房间（接收游戏消息）
 		client.JoinRoom(RoomTypeShake + ":" + activityId)
-		// 加入抽奖房间（接收抽奖消息）
-		client.JoinRoom(RoomTypeDraw + ":" + activityId)
 	}
 
 	client.SendMessage(TypeConnected, ConnectedPayload{

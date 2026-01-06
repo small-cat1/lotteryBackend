@@ -36,9 +36,6 @@ func (r *H5Router) InitH5Router(Router *gin.RouterGroup) {
 
 		// 弹幕（登录就能用）
 		h5Auth.POST("danmaku", h5Api.SendDanmaku)
-		h5Auth.GET("danmaku/recent/:activityId", h5Api.GetRecentDanmaku)
-		h5Auth.GET("danmaku/top/:activityId", h5Api.GetTopDanmaku)
-		h5Auth.GET("danmaku/my/:activityId", h5Api.GetMyDanmaku)
 	}
 
 	// ========== 需要签到且审核通过 ==========
@@ -48,8 +45,7 @@ func (r *H5Router) InitH5Router(Router *gin.RouterGroup) {
 		// 摇一摇
 		h5Private.GET("shake/round/current/:activityId", h5Api.GetCurrentRound)
 		h5Private.GET("shake/round/:roundId", h5Api.GetRoundDetail)
-		h5Private.POST("shake/join", h5Api.JoinGame)
-		h5Private.POST("shake/score", h5Api.SubmitScore)
+
 		h5Private.GET("shake/ranking/:roundId", h5Api.GetShakeRanking)
 		h5Private.GET("shake/my/:roundId", h5Api.GetMyScore)
 		h5Private.GET("shake/result/:roundId", h5Api.GetRoundResult)

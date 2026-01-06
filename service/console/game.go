@@ -2,10 +2,12 @@ package console
 
 import (
 	"errors"
+	"fmt"
+	"gorm.io/gorm"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
-	"lotteryBackend/service/common"
+	"lotteryBackend/pkg/cache"
 	"time"
 )
 
@@ -30,7 +32,7 @@ func (s *GameService) StartGame(roundId uint, password string) error {
 		return errors.New("密码错误")
 	}
 	// 检查是否有进行中的游戏
-	currentRoundId, err := common.GetCurrentRound(round.ActivityId)
+	currentRoundId, err := cache.GetCurrentRound(round.ActivityId)
 	if err == nil && currentRoundId > 0 {
 		return errors.New("当前有进行中的游戏，请先结束后再开始")
 	}
@@ -46,8 +48,8 @@ func (s *GameService) StartGame(roundId uint, password string) error {
 	if duration <= 0 {
 		duration = 60 // 默认1分钟
 	}
-	common.SetCurrentRound(round.ActivityId, roundId, duration)
-	common.SetRoundStatus(roundId, RoundStatusPlaying)
+	cache.SetCurrentRound(round.ActivityId, roundId, duration)
+	cache.SetRoundStatus(roundId, RoundStatusPlaying)
 
 	return nil
 }
@@ -61,7 +63,7 @@ func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, er
 	}
 
 	// 获取当前场次ID
-	currentRoundId, err := common.GetCurrentRound(activityId)
+	currentRoundId, err := cache.GetCurrentRound(activityId)
 	if err != nil || currentRoundId == 0 {
 		return resp, nil
 	}
@@ -90,11 +92,11 @@ func (s *GameService) GetCurrent(activityId uint) (*response.CurrentGameResp, er
 	}
 
 	// 获取剩余时间（直接用TTL）
-	remaining, _ := common.GetCurrentRoundRemaining(activityId)
+	remaining, _ := cache.GetCurrentRoundRemaining(activityId)
 	resp.Remaining = remaining
 	resp.Status = RoundStatusPlaying
 	// 获取排行榜
-	ranking, _ := common.GetRanking(currentRoundId, 20)
+	ranking, _ := cache.GetRanking(currentRoundId, 20)
 	if len(ranking) > 0 {
 		userIds := make([]uint, 0, len(ranking))
 		for _, item := range ranking {
@@ -158,8 +160,8 @@ func (s *GameService) CancelGame(roundId uint) error {
 	})
 
 	// 清除Redis数据
-	common.ClearCurrentRound(round.ActivityId)
-	common.ClearRoundScores(roundId)
+	cache.ClearCurrentRound(round.ActivityId)
+	cache.ClearRoundScores(roundId)
 
 	// 清除数据库成绩
 	global.GVA_DB.Where("round_id = ?", roundId).Delete(&annual.AnnualShakeScore{})
@@ -182,7 +184,7 @@ func (s *GameService) GetGameStatus(roundId uint) (*response.GameStatusResp, err
 	}
 
 	// 从Redis获取参与人数
-	playerCount, err := common.GetPlayerCount(roundId)
+	playerCount, err := cache.GetPlayerCount(roundId)
 	if err != nil {
 		// 降级查数据库
 		global.GVA_DB.Model(&annual.AnnualShakeScore{}).Where("round_id = ?", roundId).Count(&playerCount)
@@ -214,13 +216,13 @@ func (s *GameService) GetRanking(roundId uint, limit int) (*response.RankingList
 	}
 
 	// 从Redis获取排行榜
-	ranking, err := common.GetRanking(roundId, int64(limit))
+	ranking, err := cache.GetRanking(roundId, int64(limit))
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取参与人数
-	playerCount, _ := common.GetPlayerCount(roundId)
+	playerCount, _ := cache.GetPlayerCount(roundId)
 
 	list := make([]response.RankingItem, 0, len(ranking))
 	for _, r := range ranking {
@@ -308,14 +310,23 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 	}
 
 	// 从Redis获取排行榜
-	ranking, err := common.GetRanking(roundId, 0) // 获取全部
+	ranking, err := cache.GetRanking(roundId, 0)
 	if err != nil {
 		return nil, err
 	}
 
+	if len(ranking) == 0 {
+		return &response.DrawResultResp{
+			Winners: []response.WinnerItem{},
+			Prize:   nil,
+		}, nil
+	}
+
 	// 获取奖品信息
 	var prize annual.AnnualPrize
-	global.GVA_DB.First(&prize, round.PrizeId)
+	if err := global.GVA_DB.First(&prize, round.PrizeId).Error; err != nil {
+		return nil, errors.New("奖品不存在")
+	}
 
 	prizeInfo := &response.PrizeItem{
 		ID:    prize.ID,
@@ -324,37 +335,53 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 		Level: safeInt(prize.Level),
 	}
 
-	winners := make([]response.WinnerItem, 0)
-	winType := 1 // 摇一摇
+	// 提前批量获取所有用户信息
+	userIds := make([]uint, 0, len(ranking))
+	for _, r := range ranking {
+		userIds = append(userIds, r.UserId)
+	}
+
+	var users []annual.AnnualUser
+	if err := global.GVA_DB.Where("id IN ?", userIds).Find(&users).Error; err != nil {
+		return nil, errors.New("获取用户信息失败")
+	}
+
+	// 构建用户Map，方便快速查找
+	userMap := make(map[uint]annual.AnnualUser, len(users))
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
+	// 准备批量插入的数据
+	scores := make([]annual.AnnualShakeScore, 0, len(ranking))
+	winnersData := make([]annual.AnnualWinner, 0, round.WinnerCount)
+	winners := make([]response.WinnerItem, 0, round.WinnerCount)
+	winType := 1
 
 	for _, r := range ranking {
-		var user annual.AnnualUser
-		global.GVA_DB.First(&user, r.UserId)
-
 		isWinner := r.Rank <= round.WinnerCount
 
-		// 保存成绩到数据库
-		score := annual.AnnualShakeScore{
+		// 准备成绩数据
+		scores = append(scores, annual.AnnualShakeScore{
 			ActivityId: round.ActivityId,
 			RoundId:    roundId,
 			UserId:     r.UserId,
 			Score:      int(r.Score),
 			Rank:       r.Rank,
 			IsWinner:   boolToIntPtr(isWinner),
-		}
-		global.GVA_DB.Create(&score)
+		})
 
 		// 中奖处理
 		if isWinner {
-			winner := annual.AnnualWinner{
+			winnersData = append(winnersData, annual.AnnualWinner{
 				ActivityId: round.ActivityId,
 				UserId:     r.UserId,
 				PrizeId:    round.PrizeId,
 				RoundId:    roundId,
 				WinType:    &winType,
-			}
-			global.GVA_DB.Create(&winner)
+			})
 
+			user := userMap[r.UserId]
 			userInfo := &response.UserInfo{
 				ID:       user.ID,
 				Nickname: user.Nickname,
@@ -362,33 +389,61 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 			}
 
 			winners = append(winners, response.WinnerItem{
-				ID:        winner.ID,
-				Rank:      r.Rank,
-				UserId:    r.UserId,
-				Score:     int(r.Score),
-				WinType:   winType,
-				CreatedAt: winner.CreatedAt,
-				User:      userInfo,
-				Prize:     prizeInfo,
+				Rank:    r.Rank,
+				UserId:  r.UserId,
+				Score:   int(r.Score),
+				WinType: winType,
+				User:    userInfo,
+				Prize:   prizeInfo,
 			})
 		}
 	}
 
-	// 更新场次状态
-	now := time.Now()
-	global.GVA_DB.Model(&round).Updates(map[string]interface{}{
-		"status":   RoundStatusFinished,
-		"end_time": now,
+	// 使用事务批量写入
+	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
+		// 批量插入成绩
+		if len(scores) > 0 {
+			if err := tx.CreateInBatches(&scores, 100).Error; err != nil {
+				return fmt.Errorf("保存成绩失败: %w", err)
+			}
+		}
+
+		// 批量插入中奖记录
+		if len(winnersData) > 0 {
+			if err := tx.CreateInBatches(&winnersData, 100).Error; err != nil {
+				return fmt.Errorf("保存中奖记录失败: %w", err)
+			}
+
+			// 更新奖品剩余数量
+			if err := tx.Model(&prize).Update("remain_count", gorm.Expr("remain_count - ?", len(winnersData))).Error; err != nil {
+				return fmt.Errorf("更新奖品数量失败: %w", err)
+			}
+		}
+
+		// 更新场次状态
+		if err := tx.Model(&round).Updates(map[string]interface{}{
+			"status":   RoundStatusFinished,
+			"end_time": time.Now(),
+		}).Error; err != nil {
+			return fmt.Errorf("更新场次状态失败: %w", err)
+		}
+
+		return nil
 	})
 
-	// 更新奖品剩余数量
-	if len(winners) > 0 {
-		global.GVA_DB.Model(&prize).Update("remain_count", prize.RemainCount-len(winners))
+	if err != nil {
+		return nil, err
 	}
 
-	// 清除Redis
-	common.ClearCurrentRound(round.ActivityId)
-	common.SetRoundStatus(roundId, RoundStatusFinished)
+	// 回填中奖记录ID（如果需要的话）
+	for i, w := range winnersData {
+		winners[i].ID = w.ID
+		winners[i].CreatedAt = w.CreatedAt
+	}
+
+	// 清除Redis（事务成功后再清除）
+	cache.ClearCurrentRound(round.ActivityId)
+	cache.SetRoundStatus(roundId, RoundStatusFinished)
 
 	return &response.DrawResultResp{
 		Winners: winners,

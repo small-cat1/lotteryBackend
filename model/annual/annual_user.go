@@ -2,7 +2,7 @@ package annual
 
 import "lotteryBackend/global"
 
-// AnnualUser 年会用户表
+// AnnualUser 用户授权登录表
 type AnnualUser struct {
 	global.GVA_MODEL
 	OpenId   string `json:"openid" gorm:"column:openid;type:varchar(64);uniqueIndex;not null;default:'';comment:微信openid"`

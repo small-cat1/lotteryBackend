@@ -43,43 +43,7 @@ func (b *Broadcaster) BroadcastDanmaku(activityId uint, payload DanmakuPayload) 
 	b.hub.BroadcastToRoom(screenRoomID, TypeNewDanmaku, payload)
 }
 
-// BroadcastTopDanmaku 广播置顶弹幕
-func (b *Broadcaster) BroadcastTopDanmaku(activityId uint, payload TopDanmakuPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeDanmaku, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeTopDanmaku, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeTopDanmaku, payload)
-}
-
 // ==================== 摇一摇广播 ====================
-
-// BroadcastGameReady 广播游戏准备
-func (b *Broadcaster) BroadcastGameReady(activityId uint, payload GameReadyPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeGameReady, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeGameReady, payload)
-}
-
-// BroadcastRoundStart 广播场次开始
-func (b *Broadcaster) BroadcastRoundStart(activityId uint, payload RoundStartPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeRoundStart, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeRoundStart, payload)
-}
-
-// BroadcastRoundEnd 广播场次结束
-func (b *Broadcaster) BroadcastRoundEnd(activityId uint, payload RoundEndPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeRoundEnd, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeRoundEnd, payload)
-}
 
 // BroadcastRankingUpdate 广播排名更新
 func (b *Broadcaster) BroadcastRankingUpdate(activityId uint, payload RankingUpdatePayload) {
@@ -88,55 +52,6 @@ func (b *Broadcaster) BroadcastRankingUpdate(activityId uint, payload RankingUpd
 
 	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
 	b.hub.BroadcastToRoom(screenRoomID, TypeRankingUpdate, payload)
-}
-
-// BroadcastCountdown 广播倒计时
-func (b *Broadcaster) BroadcastCountdown(activityId uint, payload CountdownPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeCountdown, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeCountdown, payload)
-}
-
-// ==================== 抽奖广播 ====================
-
-// BroadcastDrawStart 广播抽奖开始
-func (b *Broadcaster) BroadcastDrawStart(activityId uint, payload DrawStartPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeDraw, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeDrawStart, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeDrawStart, payload)
-}
-
-// BroadcastDrawResult 广播抽奖结果
-func (b *Broadcaster) BroadcastDrawResult(activityId uint, payload DrawResultPayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeDraw, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeDrawResult, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeDrawResult, payload)
-}
-
-// BroadcastRollingUpdate 广播滚动更新
-func (b *Broadcaster) BroadcastRollingUpdate(activityId uint, payload RollingUpdatePayload) {
-	roomID := fmt.Sprintf("%s:%d", RoomTypeDraw, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeRollingUpdate, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeRollingUpdate, payload)
-}
-
-// BroadcastDrawReset 广播抽奖重置
-func (b *Broadcaster) BroadcastDrawReset(activityId uint) {
-	payload := DrawResetPayload{Message: "抽奖已重置"}
-
-	roomID := fmt.Sprintf("%s:%d", RoomTypeDraw, activityId)
-	b.hub.BroadcastToRoom(roomID, TypeDrawReset, payload)
-
-	screenRoomID := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
-	b.hub.BroadcastToRoom(screenRoomID, TypeDrawReset, payload)
 }
 
 // ==================== 用户消息 ====================

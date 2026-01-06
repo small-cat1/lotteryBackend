@@ -5,7 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
-	"lotteryBackend/service/common"
+	"lotteryBackend/pkg/cache"
 )
 
 type ActivityService struct{}
@@ -13,19 +13,19 @@ type ActivityService struct{}
 // GetActivityDetail 获取活动详情（先查缓存，没有再查库）
 func (s *ActivityService) GetActivityDetail(activityId uint) (*response.ActivityDetailResp, error) {
 	// 先查缓存
-	cache, err := common.GetActivityCache(activityId)
-	if err == nil && cache != nil {
+	activityCache, err := cache.GetActivityCache(activityId)
+	if err == nil && activityCache != nil {
 		return &response.ActivityDetailResp{
-			ID:             cache.ID,
-			Title:          cache.Title,
-			Logo:           cache.Logo,
-			Cover:          cache.Cover,
-			Description:    cache.Description,
-			CheckInEnabled: cache.CheckInEnabled,
-			DanmakuEnabled: cache.DanmakuEnabled,
-			DanmakuAudit:   cache.DanmakuAudit,
-			WinnerExclude:  cache.WinnerExclude,
-			Status:         cache.Status,
+			ID:             activityCache.ID,
+			Title:          activityCache.Title,
+			Logo:           activityCache.Logo,
+			Cover:          activityCache.Cover,
+			Description:    activityCache.Description,
+			CheckInEnabled: activityCache.CheckInEnabled,
+			DanmakuEnabled: activityCache.DanmakuEnabled,
+			DanmakuAudit:   activityCache.DanmakuAudit,
+			WinnerExclude:  activityCache.WinnerExclude,
+			Status:         activityCache.Status,
 		}, nil
 	}
 
@@ -52,7 +52,7 @@ func (s *ActivityService) GetActivityDetail(activityId uint) (*response.Activity
 	}
 
 	// 存入缓存
-	common.SetActivityCache(&common.ActivityCache{
+	cache.SetActivityCache(&cache.ActivityCache{
 		ID:             activity.ID,
 		Title:          activity.Title,
 		Logo:           "",

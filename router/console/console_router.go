@@ -16,7 +16,7 @@ func (r *ConsoleRouter) InitConsoleRouter(Router *gin.RouterGroup) {
 	{
 		// ---------- 活动配置 ----------
 		consoleGroup.GET("/activity/:activityId", consoleApi.GetActivityDetail) // 获取活动详情
-		consoleGroup.GET("/prizes", consoleApi.GetPrizeList)                    // 获取奖品列表
+		//consoleGroup.GET("/prizes", consoleApi.GetPrizeList)                    // 获取奖品列表
 
 		// ---------- 签到管理 ----------
 		consoleGroup.GET("/checkin/stats", checkInApi.GetCheckInStats) // 获取签到统计（包含状态）
@@ -25,7 +25,6 @@ func (r *ConsoleRouter) InitConsoleRouter(Router *gin.RouterGroup) {
 
 		// ---------- 弹幕管理 ----------
 		consoleGroup.GET("/danmaku/list", consoleApi.GetDanmakuList) // 获取弹幕列表
-		consoleGroup.POST("/danmaku/audit", consoleApi.AuditDanmaku) // 审核弹幕
 
 		// ---------- 场次管理 ----------
 		consoleGroup.GET("/rounds", consoleApi.GetRoundList)            // 获取场次列表
@@ -36,7 +35,6 @@ func (r *ConsoleRouter) InitConsoleRouter(Router *gin.RouterGroup) {
 		consoleGroup.POST("/game/stop", consoleApi.StopGame)       // 停止游戏
 		consoleGroup.POST("/game/cancel", consoleApi.CancelGame)   // 取消游戏
 		consoleGroup.GET("/game/status", consoleApi.GetGameStatus) // 获取游戏状态
-		consoleGroup.GET("/game/ranking", consoleApi.GetRanking)   // 获取排行榜
 		consoleGroup.GET("/game/winners", consoleApi.GetWinners)   // 获取中奖名单
 		consoleGroup.GET("/game/current", consoleApi.GetCurrent)   // 获取游戏状态
 

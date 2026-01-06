@@ -7,6 +7,7 @@ import (
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/request"
 	"lotteryBackend/model/app/response"
+	"lotteryBackend/pkg/cache"
 	"lotteryBackend/service/common"
 	"time"
 )
@@ -19,7 +20,6 @@ func (s *H5UserService) GetUserInfo(userId uint, activityId uint) (*response.H5U
 	if err := global.GVA_DB.First(&user, userId).Error; err != nil {
 		return nil, errors.New("用户不存在")
 	}
-
 	resp := &response.H5UserResp{
 		ID:       user.ID,
 		OpenId:   user.OpenId,
@@ -43,6 +43,15 @@ func (s *H5UserService) GetUserInfo(userId uint, activityId uint) (*response.H5U
 				RejectReason: checkIn.RejectReason,
 				CheckInTime:  checkIn.CheckInTime,
 			}
+			// ========== 新增：缓存到 Redis ==========
+			go cache.SetUserInfoCache(userId, &cache.UserInfoCache{
+				ID:         user.ID,
+				Nickname:   user.Nickname,
+				Avatar:     user.Avatar,
+				RealName:   checkIn.RealName,
+				Department: checkIn.Department,
+			})
+			// ========== 新增结束 ==========
 		} else {
 			// 未签到，尝试获取上次签到的信息用于自动填充
 			var lastCheckIn annual.AnnualCheckIn
