@@ -134,15 +134,15 @@ func (h *ShakeHandler) broadcastRankingUpdate(activityId, roundId uint, winnerCo
 		toCache := make(map[uint]*cache.UserInfoCache)
 		for _, u := range users {
 			checkIn := checkInMap[u.ID]
-			cache := &cache.UserInfoCache{
+			userCacheInfo := &cache.UserInfoCache{
 				ID:         u.ID,
 				Nickname:   u.Nickname,
 				Avatar:     u.Avatar,
 				RealName:   checkIn.RealName,
 				Department: checkIn.Department,
 			}
-			userCache[u.ID] = cache
-			toCache[u.ID] = cache
+			userCache[u.ID] = userCacheInfo
+			toCache[u.ID] = userCacheInfo
 		}
 
 		// 异步写入 Redis
@@ -171,7 +171,13 @@ func (h *ShakeHandler) broadcastRankingUpdate(activityId, roundId uint, winnerCo
 			IsWinner: r.Rank <= winnerCount,
 		}
 	}
-
+	// ⭐ 添加调试日志
+	shakeRoom := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
+	screenRoom := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
+	global.GVA_LOG.Info("广播排名更新",
+		zap.String("shakeRoom", shakeRoom),
+		zap.String("screenRoom", screenRoom),
+		zap.Int("rankingCount", len(ranking)))
 	// 6. 广播
 	payload := RankingUpdatePayload{RoundId: roundId, Ranking: ranking}
 	GetHub().BroadcastToRoom(fmt.Sprintf("%s:%d", RoomTypeShake, activityId), TypeRankingUpdate, payload)

@@ -290,6 +290,15 @@ func (h *Hub) BroadcastToAll(msgType string, payload interface{}) {
 
 // BroadcastToRoom 广播给指定房间
 func (h *Hub) BroadcastToRoom(roomID string, msgType string, payload interface{}) {
+	h.RoomsMutex.RLock()
+	clients := h.Rooms[roomID]
+	clientCount := len(clients)
+	h.RoomsMutex.RUnlock()
+
+	global.GVA_LOG.Info("广播到房间",
+		zap.String("room", roomID),
+		zap.String("type", msgType),
+		zap.Int("clientCount", clientCount)) // ⭐ 看这里有多少客户端
 	h.RoomBroadcast <- &RoomMessage{
 		RoomID:  roomID,
 		Type:    msgType,
