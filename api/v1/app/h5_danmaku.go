@@ -1,12 +1,10 @@
 package app
 
 import (
+	"github.com/gin-gonic/gin"
 	"lotteryBackend/model/app/request"
 	"lotteryBackend/model/common/response"
 	"lotteryBackend/service"
-	"strconv"
-
-	"github.com/gin-gonic/gin"
 )
 
 type H5DanmakuApi struct{}
@@ -51,17 +49,20 @@ func (a *H5DanmakuApi) SendDanmaku(c *gin.Context) {
 // @Success 200 {object} response.Response{data=appResp.H5PageResult}
 // @Router /h5/danmaku/list/{activityId} [get]
 func (a *H5DanmakuApi) GetDanmakuList(c *gin.Context) {
-	activityIdStr := c.Param("activityId")
-	activityId, err := strconv.ParseUint(activityIdStr, 10, 64)
-	if err != nil {
+	var req request.DanmakuListReq
+	if err := c.ShouldBindQuery(&req); err != nil {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
 
-	var pageReq request.H5PageReq
-	c.ShouldBindQuery(&pageReq)
-
-	result, err := h5DanmakuService.GetDanmakuList(uint(activityId), pageReq.Page, pageReq.PageSize)
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 20
+	}
+	result, err := h5DanmakuService.GetDanmakuList(req.ActivityId, req.Page, req.PageSize)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return

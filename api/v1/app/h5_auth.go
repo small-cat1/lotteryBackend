@@ -18,7 +18,6 @@ var h5AuthService = service.ServiceGroupApp.AppServiceGroup.H5AuthService
 // @Summary 微信授权登录
 // @accept application/json
 // @Produce application/json
-// @Param data body request.WechatLoginReq true "微信code"
 // @Success 200 {object} response.Response{data=appResp.WechatLoginResp}
 // @Router /h5/auth/wechat [post]
 func (a *H5AuthApi) WechatLogin(c *gin.Context) {

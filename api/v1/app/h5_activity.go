@@ -16,11 +16,10 @@ var h5ActivityService = service.ServiceGroupApp.AppServiceGroup.H5ActivityServic
 // @Tags H5-活动
 // @Summary 获取活动详情
 // @Produce application/json
-// @Param id path int true "活动ID"
 // @Success 200 {object} response.Response{data=appResp.H5ActivityResp}
 // @Router /h5/activity/{id} [get]
 func (a *H5ActivityApi) GetActivityDetail(c *gin.Context) {
-	idStr := c.Param("id")
+	idStr := c.Query("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.FailWithMessage("参数错误", c)

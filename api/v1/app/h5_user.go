@@ -21,8 +21,11 @@ var h5UserService = service.ServiceGroupApp.AppServiceGroup.H5UserService
 // GetUserInfo 获取用户信息
 func (a *H5UserApi) GetUserInfo(c *gin.Context) {
 	var req request.GetUserInfoReq
-	_ = c.ShouldBindQuery(&req)
-
+	err := c.ShouldBindQuery(&req)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
 	userId := c.GetUint("h5UserId")
 
 	result, err := h5UserService.GetUserInfo(userId, req.ActivityId)
