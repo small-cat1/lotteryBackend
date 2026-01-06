@@ -2,9 +2,11 @@ package app
 
 import (
 	"errors"
+	"lotteryBackend/constants"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/response"
+	"lotteryBackend/pkg/cache"
 	"time"
 )
 
@@ -12,21 +14,29 @@ type H5ShakeService struct{}
 
 // GetCurrentRound 获取当前进行中的场次
 func (s *H5ShakeService) GetCurrentRound(activityId uint) (*response.ShakeRoundResp, error) {
-	var round annual.AnnualShakeRound
-
-	// 先找进行中的
-	result := global.GVA_DB.Where("activity_id = ? AND status = ?", activityId, 1).First(&round)
-
-	if result.RowsAffected == 0 {
-		// 再找等待中的
-		result = global.GVA_DB.Where("activity_id = ? AND status = ?", activityId, 0).
-			Order("sort ASC, id ASC").First(&round)
+	// 1. 先从缓存获取当前场次ID
+	roundId, err := cache.GetCurrentRound(activityId)
+	if err != nil {
+		return nil, err
 	}
 
-	if result.RowsAffected == 0 {
+	// 缓存中没有进行中的场次
+	if roundId == 0 {
 		return nil, nil
 	}
 
+	// 2. 再从缓存获取场次状态（双重确认）
+	status, err := cache.GetRoundStatus(roundId)
+	if err != nil || status != constants.ShakeRoundStatusOngoing {
+		// 状态不是进行中，返回空
+		return nil, nil
+	}
+
+	// 3. 场次详情可以从数据库获取（或者也缓存起来）
+	var round annual.AnnualShakeRound
+	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
+		return nil, nil
+	}
 	return s.toRoundResp(&round), nil
 }
 

@@ -30,25 +30,6 @@ func (a *ConsoleApi) GetActivityDetail(c *gin.Context) {
 	response.OkWithData(result, c)
 }
 
-// GetPrizeList 获取奖品列表
-// @Tags Console-活动
-// @Summary 获取奖品列表
-// @Produce application/json
-// @Param activityId query int true "活动ID"
-// @Success 200 {object} response.Response
-// @Router /console/prizes [get]
-func (a *ConsoleApi) GetPrizeList(c *gin.Context) {
-	activityIdStr := c.Query("activityId")
-	activityId, _ := strconv.ParseUint(activityIdStr, 10, 64)
-
-	result, err := activityService.GetPrizeList(uint(activityId))
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithData(result, c)
-}
-
 // GetRoundList 获取场次列表
 // @Tags Console-场次
 // @Summary 获取场次列表
@@ -61,25 +42,6 @@ func (a *ConsoleApi) GetRoundList(c *gin.Context) {
 	activityId, _ := strconv.ParseUint(activityIdStr, 10, 64)
 
 	result, err := activityService.GetRoundList(uint(activityId))
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithData(result, c)
-}
-
-// GetRoundDetail 获取场次详情
-// @Tags Console-场次
-// @Summary 获取场次详情
-// @Produce application/json
-// @Param roundId path int true "场次ID"
-// @Success 200 {object} response.Response
-// @Router /console/rounds/{roundId} [get]
-func (a *ConsoleApi) GetRoundDetail(c *gin.Context) {
-	roundIdStr := c.Param("roundId")
-	roundId, _ := strconv.ParseUint(roundIdStr, 10, 64)
-
-	result, err := activityService.GetRoundDetail(uint(roundId))
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
@@ -155,48 +117,6 @@ func (a *ConsoleApi) StopGame(c *gin.Context) {
 	}
 
 	result, err := gameService.StopGame(req.RoundId)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithData(result, c)
-}
-
-// CancelGame 取消游戏
-// @Tags Console-游戏
-// @Summary 取消游戏
-// @Accept application/json
-// @Produce application/json
-// @Param data body consoleReq.CancelGameReq true "取消游戏"
-// @Success 200 {object} response.Response
-// @Router /console/game/cancel [post]
-func (a *ConsoleApi) CancelGame(c *gin.Context) {
-	var req consoleReq.CancelGameReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.FailWithMessage("参数错误", c)
-		return
-	}
-
-	err := gameService.CancelGame(req.RoundId)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-	response.OkWithMessage("游戏已取消", c)
-}
-
-// GetGameStatus 获取游戏状态
-// @Tags Console-游戏
-// @Summary 获取游戏状态
-// @Produce application/json
-// @Param roundId query int true "场次ID"
-// @Success 200 {object} response.Response
-// @Router /console/game/status [get]
-func (a *ConsoleApi) GetGameStatus(c *gin.Context) {
-	roundIdStr := c.Query("roundId")
-	roundId, _ := strconv.ParseUint(roundIdStr, 10, 64)
-
-	result, err := gameService.GetGameStatus(uint(roundId))
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return

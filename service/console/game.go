@@ -137,71 +137,10 @@ func (s *GameService) StopGame(roundId uint) (*response.DrawResultResp, error) {
 	if safeInt(round.Status) != RoundStatusPlaying {
 		return nil, errors.New("游戏未在进行中")
 	}
-
-	return s.settleGame(roundId)
-}
-
-// CancelGame 取消游戏
-func (s *GameService) CancelGame(roundId uint) error {
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return errors.New("场次不存在")
-	}
-
-	status := safeInt(round.Status)
-	if status == RoundStatusFinished {
-		return errors.New("已结束的场次不能取消")
-	}
-
-	// 重置数据库状态
-	global.GVA_DB.Model(&round).Updates(map[string]interface{}{
-		"status":     RoundStatusPending,
-		"start_time": nil,
-	})
-
-	// 清除Redis数据
+	// ✅ 第一步：先关闭 Redis 游戏状态，阻止用户继续上分
 	cache.ClearCurrentRound(round.ActivityId)
-	cache.ClearRoundScores(roundId)
-
-	// 清除数据库成绩
-	global.GVA_DB.Where("round_id = ?", roundId).Delete(&annual.AnnualShakeScore{})
-
-	return nil
-}
-
-// GetGameStatus 获取游戏状态
-func (s *GameService) GetGameStatus(roundId uint) (*response.GameStatusResp, error) {
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return nil, errors.New("场次不存在")
-	}
-
-	result := &response.GameStatusResp{
-		RoundId:   roundId,
-		Status:    safeInt(round.Status),
-		Duration:  round.Duration,
-		StartTime: round.StartTime,
-	}
-
-	// 从Redis获取参与人数
-	playerCount, err := cache.GetPlayerCount(roundId)
-	if err != nil {
-		// 降级查数据库
-		global.GVA_DB.Model(&annual.AnnualShakeScore{}).Where("round_id = ?", roundId).Count(&playerCount)
-	}
-	result.PlayerCount = int(playerCount)
-
-	// 计算剩余时间
-	if safeInt(round.Status) == RoundStatusPlaying && round.StartTime != nil {
-		elapsed := int(time.Since(*round.StartTime).Seconds())
-		remaining := round.Duration - elapsed
-		if remaining < 0 {
-			remaining = 0
-		}
-		result.Remaining = remaining
-	}
-
-	return result, nil
+	cache.SetRoundStatus(roundId, RoundStatusFinished)
+	return s.settleGame(roundId)
 }
 
 // GetRanking 获取排行榜
@@ -440,10 +379,6 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 		winners[i].ID = w.ID
 		winners[i].CreatedAt = w.CreatedAt
 	}
-
-	// 清除Redis（事务成功后再清除）
-	cache.ClearCurrentRound(round.ActivityId)
-	cache.SetRoundStatus(roundId, RoundStatusFinished)
 
 	return &response.DrawResultResp{
 		Winners: winners,
