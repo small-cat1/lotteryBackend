@@ -171,15 +171,21 @@ func (h *ShakeHandler) broadcastRankingUpdate(activityId, roundId uint, winnerCo
 			IsWinner: r.Rank <= winnerCount,
 		}
 	}
+	playerCount, _ := cache.GetPlayerCount(roundId)
 	// ⭐ 添加调试日志
 	shakeRoom := fmt.Sprintf("%s:%d", RoomTypeShake, activityId)
 	screenRoom := fmt.Sprintf("%s:%d", RoomTypeScreen, activityId)
 	global.GVA_LOG.Info("广播排名更新",
 		zap.String("shakeRoom", shakeRoom),
 		zap.String("screenRoom", screenRoom),
-		zap.Int("rankingCount", len(ranking)))
+		zap.Int("rankingCount", len(ranking)),
+		zap.Int64("playerCount", playerCount)) // 新增日志
 	// 6. 广播
-	payload := RankingUpdatePayload{RoundId: roundId, Ranking: ranking}
+	payload := RankingUpdatePayload{
+		RoundId:     roundId,
+		Ranking:     ranking,
+		PlayerCount: uint(playerCount), // ⭐ 新增
+	}
 	GetHub().BroadcastToRoom(fmt.Sprintf("%s:%d", RoomTypeShake, activityId), TypeRankingUpdate, payload)
 	GetHub().BroadcastToRoom(fmt.Sprintf("%s:%d", RoomTypeScreen, activityId), TypeRankingUpdate, payload)
 }

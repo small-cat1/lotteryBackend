@@ -107,8 +107,9 @@ type RankingItem struct {
 
 // RankingUpdatePayload 排名更新消息
 type RankingUpdatePayload struct {
-	RoundId uint          `json:"roundId"`
-	Ranking []RankingItem `json:"ranking"`
+	RoundId     uint          `json:"roundId"`
+	PlayerCount uint          `json:"playerCount"`
+	Ranking     []RankingItem `json:"ranking"`
 }
 
 // ==================== 抽奖消息 ====================
