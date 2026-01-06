@@ -154,20 +154,6 @@ func (s *H5UserService) CheckIn(userId uint, req request.CheckInReq, ip string) 
 	}, nil
 }
 
-// GetAuditStatus 获取审核状态
-func (s *H5UserService) GetAuditStatus(userId uint, activityId uint) (*response.AuditStatusResp, error) {
-	var checkIn annual.AnnualCheckIn
-	result := global.GVA_DB.Where("activity_id = ? AND user_id = ?", activityId, userId).First(&checkIn)
-	if result.RowsAffected == 0 {
-		return nil, errors.New("未找到签到记录")
-	}
-
-	return &response.AuditStatusResp{
-		Status:       checkIn.Status,
-		RejectReason: checkIn.RejectReason,
-	}, nil
-}
-
 // getNeedAuditConfig 获取是否需要审核配置
 func (s *H5UserService) getNeedAuditConfig() bool {
 	var config annual.AnnualConfig

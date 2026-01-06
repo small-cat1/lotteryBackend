@@ -96,15 +96,3 @@ func (a *H5AuthApi) RefreshToken(c *gin.Context) {
 
 	response.OkWithData(gin.H{"token": token}, c)
 }
-
-// Logout 退出登录
-// @Tags H5-授权
-// @Summary 退出登录
-// @Security ApiKeyAuth
-// @Produce application/json
-// @Success 200 {object} response.Response
-// @Router /h5/auth/logout [post]
-func (a *H5AuthApi) Logout(c *gin.Context) {
-	// H5端退出只需清除前端token即可，服务端无需处理
-	response.OkWithMessage("退出成功", c)
-}

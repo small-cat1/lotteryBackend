@@ -10,32 +10,6 @@ import (
 
 type H5PrizeService struct{}
 
-// GetPrizeList 获取奖品列表
-func (s *H5PrizeService) GetPrizeList(activityId uint) ([]response.H5PrizeResp, error) {
-	var prizes []annual.AnnualPrize
-	err := global.GVA_DB.Where("activity_id = ?", activityId).
-		Order("level ASC, sort ASC").
-		Find(&prizes).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]response.H5PrizeResp, len(prizes))
-	for i, p := range prizes {
-		result[i] = response.H5PrizeResp{
-			ID:          p.ID,
-			Name:        p.Name,
-			Image:       p.Image,
-			Level:       *p.Level,
-			TotalCount:  p.TotalCount,
-			RemainCount: p.RemainCount,
-		}
-	}
-
-	return result, nil
-}
-
 // GetPrizeDetail 获取奖品详情
 func (s *H5PrizeService) GetPrizeDetail(prizeId uint) (*response.H5PrizeResp, error) {
 	var prize annual.AnnualPrize
@@ -107,45 +81,6 @@ func (s *H5PrizeService) GetWinningDetail(winnerId uint) (*response.WinningResp,
 	}
 
 	return resp, nil
-}
-
-// GetRecentWinnings 获取最新中奖记录
-func (s *H5PrizeService) GetRecentWinnings(activityId uint, limit int) ([]response.WinningResp, error) {
-	if limit <= 0 {
-		limit = 10
-	}
-
-	var winners []annual.AnnualWinner
-	err := global.GVA_DB.Where("activity_id = ?", activityId).
-		Order("created_at DESC").
-		Limit(limit).
-		Find(&winners).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	userService := H5UserService{}
-	result := make([]response.WinningResp, len(winners))
-	for i, w := range winners {
-		userBrief := userService.GetUserBrief(w.UserId)
-
-		result[i] = response.WinningResp{
-			ID:          w.ID,
-			PrizeId:     w.PrizeId,
-			WinType:     *w.WinType,
-			Status:      *w.Status,
-			ReceiveTime: w.ReceiveTime,
-			CreatedAt:   w.CreatedAt,
-			Prize:       s.getPrizeBrief(w.PrizeId),
-		}
-
-		if userBrief != nil {
-			result[i].User = userBrief
-		}
-	}
-
-	return result, nil
 }
 
 // GetReceiveQrCode 获取领奖二维码数据

@@ -5,8 +5,6 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/response"
-	"lotteryBackend/ws"
-	"sort"
 	"time"
 )
 
@@ -49,16 +47,6 @@ func (s *H5ShakeService) GetRoundList(activityId uint) ([]response.ShakeRoundRes
 	}
 
 	return result, nil
-}
-
-// GetRoundDetail 获取场次详情
-func (s *H5ShakeService) GetRoundDetail(roundId uint) (*response.ShakeRoundResp, error) {
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return nil, errors.New("场次不存在")
-	}
-
-	return s.toRoundResp(&round), nil
 }
 
 // GetShakeRanking 获取实时排名
@@ -209,92 +197,4 @@ func (s *H5ShakeService) toRoundResp(round *annual.AnnualShakeRound) *response.S
 	}
 
 	return resp
-}
-
-// broadcastRankingUpdate 广播排名更新到主持人端
-func (s *H5ShakeService) broadcastRankingUpdate(activityId, roundId uint) {
-	// 获取前10名排名
-	ranking, err := s.GetShakeRanking(roundId, 10)
-	if err != nil {
-		return
-	}
-
-	// 转换为 WebSocket 消息格式
-	wsRanking := make([]ws.RankingItem, len(ranking))
-	for i, r := range ranking {
-		wsRanking[i] = ws.RankingItem{
-			Rank:   r.Rank,
-			UserId: r.UserId,
-			User: ws.UserBrief{
-				ID:         r.User.ID,
-				Nickname:   r.User.Nickname,
-				Avatar:     r.User.Avatar,
-				RealName:   r.User.RealName,
-				Department: r.User.Department,
-			},
-			Score:    r.Score,
-			IsWinner: r.IsWinner,
-		}
-	}
-
-	// 广播到主持人端
-	ws.GetBroadcaster().BroadcastRankingUpdate(activityId, ws.RankingUpdatePayload{
-		RoundId: roundId,
-		Ranking: wsRanking,
-	})
-}
-
-// SettleRound 结算场次（生成中奖记录）
-func (s *H5ShakeService) SettleRound(roundId uint) error {
-	var round annual.AnnualShakeRound
-	if err := global.GVA_DB.First(&round, roundId).Error; err != nil {
-		return errors.New("场次不存在")
-	}
-
-	// 获取排名
-	var scores []annual.AnnualShakeScore
-	global.GVA_DB.Where("round_id = ?", roundId).
-		Order("score DESC").
-		Find(&scores)
-
-	// 按分数排序后取前N名
-	sort.Slice(scores, func(i, j int) bool {
-		return scores[i].Score > scores[j].Score
-	})
-
-	winnerCount := round.WinnerCount
-	if winnerCount > len(scores) {
-		winnerCount = len(scores)
-	}
-
-	// 创建中奖记录
-	for i := 0; i < winnerCount; i++ {
-		// 更新成绩记录
-		global.GVA_DB.Model(&scores[i]).Updates(map[string]interface{}{
-			"rank":      i + 1,
-			"is_winner": 1,
-		})
-
-		// 创建中奖记录
-		WinType := 1
-		Status := 0
-		winner := annual.AnnualWinner{
-			ActivityId: round.ActivityId,
-			UserId:     scores[i].UserId,
-			PrizeId:    round.PrizeId,
-			RoundId:    roundId,
-			WinType:    &WinType, // 摇一摇
-			Status:     &Status,  // 未领取
-		}
-		global.GVA_DB.Create(&winner)
-	}
-
-	// 更新奖品剩余数量
-	if round.PrizeId > 0 {
-		global.GVA_DB.Model(&annual.AnnualPrize{}).
-			Where("id = ?", round.PrizeId).
-			Update("remain_count", global.GVA_DB.Raw("remain_count - ?", winnerCount))
-	}
-
-	return nil
 }

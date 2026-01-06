@@ -53,17 +53,3 @@ func (a *H5UserApi) CheckIn(c *gin.Context) {
 
 	response.OkWithData(result, c)
 }
-
-// GetAuditStatus 获取审核状态
-func (a *H5UserApi) GetAuditStatus(c *gin.Context) {
-	userId := c.GetUint("h5UserId")
-	activityId := c.GetUint("activityId") // 从query获取
-
-	result, err := h5UserService.GetAuditStatus(userId, activityId)
-	if err != nil {
-		response.FailWithMessage(err.Error(), c)
-		return
-	}
-
-	response.OkWithData(result, c)
-}

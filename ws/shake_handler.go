@@ -84,6 +84,7 @@ func (h *ShakeHandler) shouldBroadcast(roundId uint) bool {
 	return true
 }
 
+// broadcastRankingUpdate 广播排名更新到主持人端
 func (h *ShakeHandler) broadcastRankingUpdate(activityId, roundId uint, winnerCount int) {
 	if !h.shouldBroadcast(roundId) {
 		return
