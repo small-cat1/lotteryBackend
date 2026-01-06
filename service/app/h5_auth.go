@@ -23,7 +23,7 @@ import (
 type H5AuthService struct{}
 
 // WechatLogin 微信登录
-func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, error) {
+func (s *H5AuthService) WechatLogin(code string, activityId uint) (*response.WechatLoginResp, error) {
 	// 1. 获取微信配置
 	appId := s.getWechatAppId()
 	appSecret := s.getWechatAppSecret()
@@ -94,7 +94,23 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 			"avatar":   wxUser.HeadImgUrl,
 		})
 	}
-
+	// 5. 查询签到信息（新增）
+	var checkIn *response.H5CheckInInfo
+	if activityId > 0 {
+		var checkInRecord annual.AnnualCheckIn
+		if err := global.GVA_DB.Where("user_id = ? AND activity_id = ?", user.ID, activityId).First(&checkInRecord).Error; err == nil {
+			checkIn = &response.H5CheckInInfo{
+				IsCheckedIn:  true,
+				RealName:     checkIn.RealName,
+				Phone:        checkIn.Phone,
+				Department:   checkIn.Department,
+				EmployeeNo:   checkIn.EmployeeNo,
+				Status:       checkIn.Status,
+				RejectReason: "",
+				CheckInTime:  checkIn.CheckInTime,
+			}
+		}
+	}
 	// 5. 生成JWT Token
 	token, err := s.GenerateToken(&user)
 	if err != nil {
@@ -108,6 +124,7 @@ func (s *H5AuthService) WechatLogin(code string) (*response.WechatLoginResp, err
 			OpenId:   user.OpenId,
 			Nickname: user.Nickname,
 			Avatar:   user.Avatar,
+			CheckIn:  checkIn,
 		},
 	}, nil
 }

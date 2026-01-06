@@ -28,7 +28,7 @@ func (a *H5AuthApi) WechatLogin(c *gin.Context) {
 		return
 	}
 
-	result, err := h5AuthService.WechatLogin(req.Code)
+	result, err := h5AuthService.WechatLogin(req.Code, req.ActivityId)
 	if err != nil {
 		global.GVA_LOG.Error("微信登录失败", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
