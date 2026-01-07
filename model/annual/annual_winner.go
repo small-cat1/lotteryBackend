@@ -16,7 +16,7 @@ type AnnualWinner struct {
 	UpdatedAt   time.Time  `json:"updatedAt" gorm:"column:updated_at;comment:更新时间"`
 	// 关联
 	User     AnnualUser       `json:"user" gorm:"foreignKey:UserId;references:ID"`
-	Prize    AnnualPrize      `json:"foreignKey:PrizeId;references:ID"`
+	Prize    AnnualPrize      `json:"prize" gorm:"foreignKey:PrizeId;references:ID"`
 	Activity AnnualActivity   `json:"activity" gorm:"foreignKey:ActivityId;references:ID"`
 	Round    AnnualShakeRound `json:"round" gorm:"foreignKey:RoundId;references:ID"`
 }
