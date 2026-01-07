@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
@@ -434,7 +435,11 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 	// 使用事务批量写入
 	err = global.GVA_DB.Transaction(func(tx *gorm.DB) error {
 		if len(scores) > 0 {
-			if err := tx.CreateInBatches(&scores, 100).Error; err != nil {
+			// 修改：使用 Upsert，存在则更新，不存在则插入
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "round_id"}, {Name: "user_id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"score", "rank", "is_winner", "updated_at"}),
+			}).CreateInBatches(&scores, 100).Error; err != nil {
 				global.GVA_LOG.Error("settleGame 保存成绩失败", zap.Error(err))
 				return fmt.Errorf("保存成绩失败: %w", err)
 			}
