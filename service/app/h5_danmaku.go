@@ -5,6 +5,7 @@ import (
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/app/response"
+	"lotteryBackend/ws"
 )
 
 type H5DanmakuService struct{}
@@ -39,9 +40,9 @@ func (s *H5DanmakuService) SendDanmaku(userId, activityId uint, content, color s
 	}
 
 	// 设置审核状态
-	status := 1 // 默认通过
-	if *activity.DanmakuAudit == 1 {
-		status = 0 // 待审核
+	status := 0 // 待审核
+	if *activity.DanmakuAudit == 0 {
+		status = 1 // 默认通过
 	}
 
 	// 创建弹幕
@@ -70,6 +71,24 @@ func (s *H5DanmakuService) SendDanmaku(userId, activityId uint, content, color s
 	}
 	if userBrief != nil {
 		resp.User = *userBrief
+	}
+	if *activity.DanmakuAudit == 0 {
+		broadcaster := ws.GetBroadcaster()
+		payload := ws.NewDanmakuPayload(
+			danmaku.ID,
+			ws.NewUserBrief(
+				danmaku.User.ID,
+				danmaku.User.Nickname,
+				danmaku.User.Avatar,
+				"",
+				"",
+			),
+			danmaku.Content,
+			danmaku.Color,
+			*danmaku.IsTop,
+			danmaku.CreatedAt,
+		)
+		broadcaster.BroadcastDanmaku(danmaku.ActivityId, payload)
 	}
 
 	return resp, nil
