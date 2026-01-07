@@ -138,4 +138,5 @@ type WinningResp struct {
 	Status      int           `json:"status"`  // 0未领取 1已领取
 	ReceiveTime *time.Time    `json:"receiveTime"`
 	CreatedAt   time.Time     `json:"createdAt"`
+	ReceiveCode string        `json:"receiveCode"` // ✅ 新增
 }

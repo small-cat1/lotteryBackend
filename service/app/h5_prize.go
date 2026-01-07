@@ -47,6 +47,7 @@ func (s *H5PrizeService) GetMyWinnings(userId, activityId uint) ([]response.Winn
 			Status:      *w.Status,
 			ReceiveTime: w.ReceiveTime,
 			CreatedAt:   w.CreatedAt,
+			ReceiveCode: w.ReceiveCode, // ✅ 新增
 		}
 
 		// 获取奖品信息

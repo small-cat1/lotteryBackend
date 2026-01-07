@@ -153,14 +153,15 @@ type WinnerListResp struct {
 
 // WinnerItem 中奖信息
 type WinnerItem struct {
-	ID        uint       `json:"id"`
-	Rank      int        `json:"rank"`
-	UserId    uint       `json:"userId"`
-	Score     int        `json:"score"`
-	WinType   int        `json:"winType"` // 1摇一摇 2随机抽奖 3弹幕抽奖
-	CreatedAt time.Time  `json:"createdAt"`
-	User      *UserInfo  `json:"user"`
-	Prize     *PrizeItem `json:"prize"`
+	ID          uint       `json:"id"`
+	Rank        int        `json:"rank"`
+	UserId      uint       `json:"userId"`
+	Score       int        `json:"score"`
+	WinType     int        `json:"winType"` // 1摇一摇 2随机抽奖 3弹幕抽奖
+	CreatedAt   time.Time  `json:"createdAt"`
+	User        *UserInfo  `json:"user"`
+	Prize       *PrizeItem `json:"prize"`
+	ReceiveCode string     `json:"receiveCode"` // ✅ 新增
 }
 
 type CurrentGameResp struct {

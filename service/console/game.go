@@ -10,6 +10,7 @@ import (
 	"lotteryBackend/model/annual"
 	"lotteryBackend/model/console/response"
 	"lotteryBackend/pkg/cache"
+	"lotteryBackend/utils"
 	"lotteryBackend/ws"
 	"time"
 )
@@ -324,7 +325,6 @@ func (s *GameService) GetWinners(roundId uint) (*response.WinnerListResp, error)
 }
 
 // settleGame 结算游戏
-// settleGame 结算游戏
 func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error) {
 
 	var round annual.AnnualShakeRound
@@ -406,12 +406,15 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 		})
 
 		if isWinner {
+			receiveCode := utils.GenerateReceiveCode()
+
 			winnersData = append(winnersData, annual.AnnualWinner{
-				ActivityId: round.ActivityId,
-				UserId:     r.UserId,
-				PrizeId:    round.PrizeId,
-				RoundId:    roundId,
-				WinType:    &winType,
+				ActivityId:  round.ActivityId,
+				UserId:      r.UserId,
+				PrizeId:     round.PrizeId,
+				RoundId:     roundId,
+				WinType:     &winType,
+				ReceiveCode: receiveCode,
 			})
 
 			user := userMap[r.UserId]
@@ -422,12 +425,13 @@ func (s *GameService) settleGame(roundId uint) (*response.DrawResultResp, error)
 			}
 
 			winners = append(winners, response.WinnerItem{
-				Rank:    r.Rank,
-				UserId:  r.UserId,
-				Score:   int(r.Score),
-				WinType: winType,
-				User:    userInfo,
-				Prize:   prizeInfo,
+				Rank:        r.Rank,
+				UserId:      r.UserId,
+				Score:       int(r.Score),
+				WinType:     winType,
+				User:        userInfo,
+				Prize:       prizeInfo,
+				ReceiveCode: receiveCode, // ✅ 新增
 			})
 		}
 	}

@@ -11,6 +11,7 @@ type AnnualWinner struct {
 	RoundId     uint       `json:"roundId" gorm:"column:round_id;index;not null;default:0;comment:摇一摇场次ID，普通抽奖为0"`
 	WinType     *int       `json:"winType" gorm:"column:win_type;type:tinyint unsigned;not null;default:1;comment:中奖方式：1摇一摇 2随机抽奖 3弹幕抽奖"`
 	Status      *int       `json:"status" gorm:"column:status;type:tinyint unsigned;not null;default:0;comment:领奖状态：0未领取 1已领取"`
+	ReceiveCode string     `json:"receiveCode" gorm:"column:receive_code;type:varchar(10);not null;default:'';uniqueIndex;comment:核销密码"` // ✅ 新增
 	ReceiveTime *time.Time `json:"receiveTime" gorm:"column:receive_time;comment:领奖时间"`
 	CreatedAt   time.Time  `json:"createdAt" gorm:"column:created_at;comment:中奖时间"`
 	UpdatedAt   time.Time  `json:"updatedAt" gorm:"column:updated_at;comment:更新时间"`
