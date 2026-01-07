@@ -81,8 +81,3 @@ type WinnerSearch struct {
 	WinType    *int `json:"winType"`
 	Status     *int `json:"status"`
 }
-
-// WinnerReceive 领奖确认
-type WinnerReceive struct {
-	Id uint `json:"id" binding:"required"`
-}

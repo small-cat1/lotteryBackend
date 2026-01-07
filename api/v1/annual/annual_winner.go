@@ -41,12 +41,12 @@ func (a *AnnualWinnerApi) ConfirmReceive(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if err := annualWinnerService.ConfirmReceive(req.Id); err != nil {
-		global.GVA_LOG.Error("确认失败!", zap.Error(err))
-		response.FailWithMessage("确认失败: "+err.Error(), c)
+	if err := annualWinnerService.ConfirmReceive(req.Id, req.VerifyCode); err != nil {
+		global.GVA_LOG.Error("核销失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	response.OkWithMessage("确认成功", c)
+	response.OkWithMessage("核销成功", c)
 }
 
 // DeleteWinner 删除中奖记录

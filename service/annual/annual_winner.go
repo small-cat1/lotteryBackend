@@ -123,8 +123,28 @@ func (s *AnnualWinnerService) fillShakeScores(list *[]annual.AnnualWinner) {
 	}
 }
 
-// ConfirmReceive 确认领奖
-func (s *AnnualWinnerService) ConfirmReceive(id uint) (err error) {
+// ConfirmReceive 确认领奖（核销验证）
+func (s *AnnualWinnerService) ConfirmReceive(id uint, verifyCode string) (err error) {
+	// 1. 查询中奖记录
+	var winner annual.AnnualWinner
+	if err = global.GVA_DB.Where("id = ?", id).First(&winner).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("中奖记录不存在")
+		}
+		return err
+	}
+
+	// 2. 检查是否已领取
+	if winner.Status != nil && *winner.Status == constants.WinnerStatusReceived {
+		return errors.New("该奖品已领取，请勿重复核销")
+	}
+
+	// 3. 验证核销码
+	if winner.ReceiveCode != verifyCode {
+		return errors.New("核销码错误，请重新输入")
+	}
+
+	// 4. 更新领奖状态
 	now := time.Now()
 	return global.GVA_DB.Model(&annual.AnnualWinner{}).
 		Where("id = ?", id).
