@@ -21,7 +21,7 @@ func (s *AnnualWinnerService) GetWinnerList(info annualReq.WinnerSearch) (list [
 	db := global.GVA_DB.Model(&annual.AnnualWinner{}).
 		Preload("User").
 		Preload("Prize").
-		Preload("Activity")
+		Preload("Activity").Preload("Round")
 
 	if info.ActivityId != 0 {
 		db = db.Where("activity_id = ?", info.ActivityId)
