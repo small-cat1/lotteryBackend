@@ -19,6 +19,10 @@ type AnnualWinner struct {
 	Prize    AnnualPrize      `json:"prize" gorm:"foreignKey:PrizeId;references:ID"`
 	Activity AnnualActivity   `json:"activity" gorm:"foreignKey:ActivityId;references:ID"`
 	Round    AnnualShakeRound `json:"round" gorm:"foreignKey:RoundId;references:ID"`
+
+	// ✅ 新增：非数据库字段，用于返回成绩信息
+	Score int `json:"score" gorm:"-"`
+	Rank  int `json:"rank" gorm:"-"`
 }
 
 func (AnnualWinner) TableName() string {

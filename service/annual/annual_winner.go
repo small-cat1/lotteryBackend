@@ -2,6 +2,7 @@ package annual
 
 import (
 	"errors"
+	"go.uber.org/zap"
 	"lotteryBackend/constants"
 	"lotteryBackend/global"
 	"lotteryBackend/model/annual"
@@ -15,13 +16,15 @@ import (
 type AnnualWinnerService struct{}
 
 // GetWinnerList 获取中奖列表
+// GetWinnerList 获取中奖列表
 func (s *AnnualWinnerService) GetWinnerList(info annualReq.WinnerSearch) (list []annual.AnnualWinner, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	db := global.GVA_DB.Model(&annual.AnnualWinner{}).
 		Preload("User").
 		Preload("Prize").
-		Preload("Activity").Preload("Round")
+		Preload("Activity").
+		Preload("Round")
 
 	if info.ActivityId != 0 {
 		db = db.Where("activity_id = ?", info.ActivityId)
@@ -47,7 +50,77 @@ func (s *AnnualWinnerService) GetWinnerList(info annualReq.WinnerSearch) (list [
 		return
 	}
 	err = db.Limit(limit).Offset(offset).Order("id DESC").Find(&list).Error
+	if err != nil {
+		return
+	}
+
+	// ✅ 新增：批量查询摇一摇成绩
+	if len(list) > 0 {
+		s.fillShakeScores(&list)
+	}
+
 	return
+}
+
+// fillShakeScores 填充摇一摇成绩信息
+func (s *AnnualWinnerService) fillShakeScores(list *[]annual.AnnualWinner) {
+	// 收集需要查询的 round_id 和 user_id 组合（只查摇一摇类型）
+	type roundUserKey struct {
+		RoundId uint
+		UserId  uint
+	}
+	keys := make([]roundUserKey, 0)
+	keyIndexMap := make(map[roundUserKey][]int) // 记录每个 key 对应的 list 索引
+
+	for i, winner := range *list {
+		// 只有摇一摇类型(winType=1)且有场次ID才查询
+		if winner.WinType != nil && *winner.WinType == 1 && winner.RoundId > 0 {
+			key := roundUserKey{RoundId: winner.RoundId, UserId: winner.UserId}
+			if _, exists := keyIndexMap[key]; !exists {
+				keys = append(keys, key)
+			}
+			keyIndexMap[key] = append(keyIndexMap[key], i)
+		}
+	}
+
+	if len(keys) == 0 {
+		return
+	}
+
+	// 构建查询条件
+	var scores []annual.AnnualShakeScore
+	query := global.GVA_DB.Model(&annual.AnnualShakeScore{})
+
+	// 使用 OR 条件批量查询
+	for i, key := range keys {
+		if i == 0 {
+			query = query.Where("(round_id = ? AND user_id = ?)", key.RoundId, key.UserId)
+		} else {
+			query = query.Or("(round_id = ? AND user_id = ?)", key.RoundId, key.UserId)
+		}
+	}
+
+	if err := query.Find(&scores).Error; err != nil {
+		global.GVA_LOG.Error("查询摇一摇成绩失败", zap.Error(err))
+		return
+	}
+
+	// 构建成绩 Map
+	scoreMap := make(map[roundUserKey]annual.AnnualShakeScore)
+	for _, score := range scores {
+		key := roundUserKey{RoundId: score.RoundId, UserId: score.UserId}
+		scoreMap[key] = score
+	}
+
+	// 回填数据
+	for key, indexes := range keyIndexMap {
+		if score, exists := scoreMap[key]; exists {
+			for _, idx := range indexes {
+				(*list)[idx].Score = score.Score
+				(*list)[idx].Rank = score.Rank
+			}
+		}
+	}
 }
 
 // ConfirmReceive 确认领奖
